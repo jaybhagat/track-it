@@ -23,6 +23,7 @@ git push -uf origin main
 ## Integrate with your tools
 
 - [ ] [Set up project integrations](https://git.uwaterloo.ca/s3gambhi/cs-346-project/-/settings/integrations)
+- [ ] Seting up runner.
 
 ## Collaborate with your team
 
