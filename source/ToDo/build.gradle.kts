@@ -26,6 +26,9 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	runtimeOnly("com.h2database:h2")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+//	implementation("org.jetbrains.exposed", "exposed-core", "0.40.1")
+//	implementation("org.jetbrains.exposed", "exposed-dao", "0.40.1")
+//	implementation("org.jetbrains.exposed", "exposed-jdbc", "0.40.1")
 }
 
 tasks.withType<KotlinCompile> {
