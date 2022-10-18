@@ -17,12 +17,22 @@ class TaskController {
 	@GetMapping("/")
 	fun connect(): String? {
 		try {
-			val path = System.getProperty("user.dir");
-			println(path);
 			val url = "jdbc:sqlite:src/main/assets/database/todo.db"
 			conn = DriverManager.getConnection(url)
 			println("Connection to SQLite has been established.")
 			return "Connection established"
+		} catch (e: SQLException) {
+			println(e.message)
+			return e.message
+		}
+	}
+	@GetMapping("/test")
+	fun connect_test(): String? {
+		try {
+			val url = "jdbc:sqlite:src/main/assets/database/test.db"
+			conn = DriverManager.getConnection(url)
+			println("Test DB connection to SQLite has been established.")
+			return "Test DB connection established"
 		} catch (e: SQLException) {
 			println(e.message)
 			return e.message
