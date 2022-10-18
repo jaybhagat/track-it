@@ -20,6 +20,7 @@ variables:
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
   - export GRADLE_USER_HOME
+  - cd source/ToDo
   - chmod +x ./gradlew
 
 build:
