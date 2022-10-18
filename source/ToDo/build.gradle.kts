@@ -18,6 +18,7 @@ repositories {
 }
 
 dependencies {
+	implementation ("org.xerial:sqlite-jdbc:3.39.3.0")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-web")

@@ -2,43 +2,78 @@ package com.example.ToDo
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.data.annotation.Id
-import org.springframework.stereotype.Service
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.SQLException
 
 @SpringBootApplication
 class ToDoApplication
+
+@RestController
+class TaskController {
+	var conn: Connection? = null
+	@GetMapping("/")
+	fun connect(): String? {
+		try {
+			val path = System.getProperty("user.dir");
+			println(path);
+			val url = "jdbc:sqlite:src/main/assets/database/todo.db"
+			conn = DriverManager.getConnection(url)
+			println("Connection to SQLite has been established.")
+			return "Connection established"
+		} catch (e: SQLException) {
+			println(e.message)
+			return e.message
+		}
+	}
+
+	@GetMapping("/api")
+	fun query(): String?{
+		val con = conn;
+		val map: HashMap<String, String> = HashMap()
+		try {
+			if (con != null) {
+				val sql = "select count(*) from users"
+				val query = con.createStatement()
+				val results = query.executeQuery(sql)
+				println("Fetched data:");
+				while(results.next()){
+					println(results.getString(1));
+				}
+			}else{
+				println("Database connection not set up")
+			}
+		} catch (ex: SQLException) {
+			println(ex.message);
+		}
+		return "done"
+	}
+
+	@GetMapping("/api/add")
+	fun queryInsert(): String?{
+		val con = conn;
+		val map: HashMap<String, String> = HashMap()
+		try {
+			if (con != null) {
+				val sql = "insert into users(id, name, username, password) values ('1', 'tapish', 'tapi', 'pass')"
+				val query = con.createStatement()
+				val results = query.executeQuery(sql)
+				println("Fetched data:");
+				while(results.next()){
+					println(results.getString(1));
+				}
+			}
+		} catch (ex: SQLException) {
+			println(ex.message);
+		}
+		return "done"
+	}
+}
 
 fun main(args: Array<String>) {
 	runApplication<ToDoApplication>(*args)
 }
 
-
-@RestController
-@RequestMapping("/tasks")
-class TaskResource(val service: TaskService) {
-	@GetMapping
-	fun index(): List<Task> = service.findTasks()
-
-	@PostMapping
-	fun post(@RequestBody task: Task) {
-		service.post(task)
-	}
-}
-
-data class Task(@Id val id: String?, val text: String)
-
-@Service
-class TaskService {
-	var tasks: MutableList<Task> = mutableListOf()
-	fun findTasks() = tasks
-	fun post(task: Task) {
-		tasks.add(task)
-	}
-}
 
