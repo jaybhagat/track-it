@@ -20,16 +20,26 @@ import java.net.URL
 import javafx.application.Application
 import javafx.stage.Stage
 import org.springframework.web.bind.annotation.RequestMapping
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+
+
 
 public class User() {
-	var id = -1
-	var name = ""
 	var username = ""
 	var password = ""
 	init {
 		println("Creating user...")
 	}
 }
+
+@Serializable
+data class BaseResponse(
+	var message: String = "",
+	var error: String = ""
+)
+
+var conn: Connection? = null
 
 @SpringBootApplication
 class ToDoApplication: Application() {
@@ -39,19 +49,8 @@ class ToDoApplication: Application() {
 
 @RestController
 class TaskController() {
-	var conn: Connection? = null
-	@GetMapping("/")
-	fun connect(): String? {
-		try {
-			val url = "jdbc:sqlite:src/main/assets/database/todo.db"
-			conn = DriverManager.getConnection(url)
-			println("Connection to SQLite has been established.")
-			return "Connection established"
-		} catch (e: SQLException) {
-			println(e.message)
-			return e.message
-		}
-	}
+	val errorMapping = mapOf("[SQLITE_CONSTRAINT_PRIMARYKEY] A PRIMARY KEY constraint failed (UNIQUE constraint failed: users.username)" to "User already exists. Please choose a different username")
+
 	@GetMapping("/test")
 	fun connect_test(): String? {
 		try {
@@ -81,73 +80,58 @@ class TaskController() {
 				println("Database connection not set up")
 			}
 		} catch (ex: SQLException) {
-			println(ex.message);
+			println(errorMapping.getOrDefault(ex.message, ex.message));
 		}
 		return "done"
 	}
 
-	@GetMapping("/api/add")
-	fun queryInsert(): String?{
-		val con = conn;
-		val map: HashMap<String, String> = HashMap()
-		try {
-			if (con != null) {
-				val sql = "insert into users(id, name, username, password) values ('1', 'tapish', 'tapi', 'pass')"
-				val query = con.createStatement()
-				val results = query.executeQuery(sql)
-				while(results.next()){
-					println(results.getString(1));
-				}
-			}
-		} catch (ex: SQLException) {
-			println(ex.message);
-		}
-		return "done"
-	}
-
-	@GetMapping("/api/add/user")
-	fun userInsert(): String?{
-		val con = conn;
-		val map: HashMap<String, String> = HashMap()
-		try {
-			if (con != null) {
-
-			}
-		} catch (ex: SQLException) {
-			println(ex.message);
-		}
-		return "done"
-	}
 
 	@PostMapping(value = ["/api/add/user"])
-	fun createUser(@RequestBody getUserDetails: User): Int {
+	fun createUser(@RequestBody getUserDetails: User): String {
 		val newUser = User()
+		val res = BaseResponse()
 		try {
 			BeanUtils.copyProperties(getUserDetails, newUser)
 		} catch (e: BeansException) {
-			println(e.message)
-			return 0
+			val error = errorMapping.getOrDefault(e.message, e.message).orEmpty()
+			println(error)
+			res.error = error
+			return Json.encodeToString(listOf(res))
 		}
 		val con = conn;
 		try {
 			if (con != null) {
 				val sql =
-					"insert into users(id, name, username, password) values (${newUser.id}, '${newUser.name}', '${newUser.username}', '${newUser.password}')"
+					"insert into users(username, password) values ('${newUser.username}', '${newUser.password}')"
 				val query = con.createStatement()
-				// Use executeUpdate for Insert, Delete, Update
-				// Use executeQuery for SELECT
 				query.executeUpdate(sql)
+				res.message = "User added"
+				return Json.encodeToString(listOf(res))
 			}
 		} catch (ex: SQLException) {
-			println(ex.message)
-			return 0
+			val error = errorMapping.getOrDefault(ex.message, ex.message).orEmpty()
+			println(error)
+			res.error = error
+			return Json.encodeToString(listOf(res))
 		}
-		return 1
+		return Json.encodeToString(listOf(res))
 		// Terminal command for testing post request:
 		//	curl -H "Content-Type: application/json" -d '{ "id": 6, "name": "Joe Bloggs", "username" : "cartman", "password" : "southpark" }' http://localhost:8080/api/add/user
 	}
 }
+
+
 fun main(args: Array<String>) {
+
+	//Connecting to database
+	try {
+		val url = "jdbc:sqlite:src/main/assets/database/todo.db"
+		conn = DriverManager.getConnection(url)
+		println("Connection to SQLite has been established.")
+	} catch (e: SQLException) {
+		println(e.message)
+	}
+
 	runApplication<ToDoApplication>(*args)
 }
 
