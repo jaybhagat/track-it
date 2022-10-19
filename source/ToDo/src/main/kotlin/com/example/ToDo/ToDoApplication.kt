@@ -2,17 +2,43 @@ package com.example.ToDo
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.http.ResponseEntity
+import org.springframework.beans.BeanUtils
+import org.springframework.beans.BeansException
+import org.springframework.web.bind.annotation.RequestBody
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.io.BufferedReader
+import java.io.DataOutputStream
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import javafx.application.Application
+import javafx.stage.Stage
+import org.springframework.web.bind.annotation.RequestMapping
+
+public class User() {
+	var id = -1
+	var name = ""
+	var username = ""
+	var password = ""
+	init {
+		println("Creating user...")
+	}
+}
 
 @SpringBootApplication
-class ToDoApplication
+class ToDoApplication: Application() {
+	override fun start(stage: Stage) {
+	}
+}
 
 @RestController
-class TaskController {
+class TaskController() {
 	var conn: Connection? = null
 	@GetMapping("/")
 	fun connect(): String? {
@@ -48,7 +74,6 @@ class TaskController {
 				val sql = "select count(*) from users"
 				val query = con.createStatement()
 				val results = query.executeQuery(sql)
-				println("Fetched data:");
 				while(results.next()){
 					println(results.getString(1));
 				}
@@ -70,7 +95,6 @@ class TaskController {
 				val sql = "insert into users(id, name, username, password) values ('1', 'tapish', 'tapi', 'pass')"
 				val query = con.createStatement()
 				val results = query.executeQuery(sql)
-				println("Fetched data:");
 				while(results.next()){
 					println(results.getString(1));
 				}
@@ -80,8 +104,49 @@ class TaskController {
 		}
 		return "done"
 	}
-}
 
+	@GetMapping("/api/add/user")
+	fun userInsert(): String?{
+		val con = conn;
+		val map: HashMap<String, String> = HashMap()
+		try {
+			if (con != null) {
+
+			}
+		} catch (ex: SQLException) {
+			println(ex.message);
+		}
+		return "done"
+	}
+
+	@PostMapping(value = ["/api/add/user"])
+	fun createUser(@RequestBody getUserDetails: User): Int {
+		val newUser = User()
+		try {
+			BeanUtils.copyProperties(getUserDetails, newUser)
+		} catch (e: BeansException) {
+			println(e.message)
+			return 0
+		}
+		val con = conn;
+		try {
+			if (con != null) {
+				val sql =
+					"insert into users(id, name, username, password) values (${newUser.id}, '${newUser.name}', '${newUser.username}', '${newUser.password}')"
+				val query = con.createStatement()
+				// Use executeUpdate for Insert, Delete, Update
+				// Use executeQuery for SELECT
+				query.executeUpdate(sql)
+			}
+		} catch (ex: SQLException) {
+			println(ex.message)
+			return 0
+		}
+		return 1
+		// Terminal command for testing post request:
+		//	curl -H "Content-Type: application/json" -d '{ "id": 6, "name": "Joe Bloggs", "username" : "cartman", "password" : "southpark" }' http://localhost:8080/api/add/user
+	}
+}
 fun main(args: Array<String>) {
 	runApplication<ToDoApplication>(*args)
 }
