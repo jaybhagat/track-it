@@ -25,12 +25,13 @@ import java.net.URL
 import javafx.application.Application
 import javafx.stage.Stage
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.*
 
 public class User() {
-	public var id = null
-	public var name = null
-	public var username = null
-	public var password = null
+	var id = -1
+	var name = ""
+	var username = ""
+	var password = ""
 	init {
 		println("Creating user for: $name")
 	}
@@ -124,6 +125,7 @@ class TaskController() {
 				}
 			}
 		} catch (ex: SQLException) {
+			println("Error")
 			println(ex.message);
 		}
 		return "done"
@@ -143,11 +145,12 @@ class TaskController() {
 		return "done"
 	}
 
-	@PostMapping("/api/add/user")
+	@PostMapping(value = ["/api/add/user"])
 	fun createUser(@RequestBody getUserDetails: User): Int {
 		val newUser = User()
 		try {
 			BeanUtils.copyProperties(getUserDetails, newUser)
+			println("${getUserDetails.username} ${getUserDetails.id}")
 		} catch (e: BeansException) {
 			println(e.message)
 			return 0
@@ -155,16 +158,15 @@ class TaskController() {
 		val con = conn;
 		try {
 			if (con != null) {
+				println("Hello")
 				val sql =
-					"insert into users(id, name, username, password) values ('${newUser.id}', '${newUser.name}', '${newUser.username}', '${newUser.password}')"
+					"insert into users(id, name, username, password) values (${newUser.id}, '${newUser.name}', '${newUser.username}', '${newUser.password}')"
 				val query = con.createStatement()
-				val results = query.executeQuery(sql)
+				val results = query.executeUpdate(sql)
 				println("Fetched data:")
-				while (results.next()) {
-					println(results.getString(1))
-				}
 			}
 		} catch (ex: SQLException) {
+			println("Error")
 			println(ex.message)
 			return 0
 		}
@@ -185,6 +187,7 @@ fun formData(data: Map<String, String>): HttpRequest.BodyPublisher? {
 fun main(args: Array<String>) {
 //	val userValues = mapOf("id" to "1", "name" to "Sarvesh", "username" to "cartman", "password" to "southpark")
 //	val client = HttpClient.newBuilder().build()
+//	curl -H "Content-Type: application/json" -d '{ "id": 6, "name": "Joe Bloggs", "username" : "cartman", "password" : "southpark" }' http://localhost:8080/api/add/user
 //
 //	val request = HttpRequest.newBuilder()
 //		.uri(URI.create("https://localhost:8080/api/add/user"))
