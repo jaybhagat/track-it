@@ -17,6 +17,14 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.io.BufferedReader
+import java.io.DataOutputStream
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import javafx.application.Application
+import javafx.stage.Stage
+import org.springframework.web.bind.annotation.RequestMapping
 
 public class User() {
 	public var id = null
@@ -29,7 +37,27 @@ public class User() {
 }
 
 @SpringBootApplication
-class ToDoApplication
+class ToDoApplication: Application() {
+	override fun start(stage: Stage) {
+		val url = URL("https://localhost:8080/api/add/user")
+		val postData = "id=1&name=Sarvesh&username=cartman&password=southpark"
+
+		val conn = url.openConnection() as HttpURLConnection
+		conn.requestMethod = "POST"
+		conn.doOutput = true
+		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+		conn.setRequestProperty("Content-Length", postData.length.toString())
+		conn.useCaches = false
+
+		DataOutputStream(conn.outputStream).use { it.writeBytes(postData) }
+		BufferedReader(InputStreamReader(conn.inputStream)).use { br ->
+			var line: String?
+			while (br.readLine().also { line = it } != null) {
+				println(line)
+			}
+		}
+	}
+}
 
 @RestController
 class TaskController() {
@@ -101,6 +129,20 @@ class TaskController() {
 		return "done"
 	}
 
+	@GetMapping("/api/add/user")
+	fun userInsert(): String?{
+		val con = conn;
+		val map: HashMap<String, String> = HashMap()
+		try {
+			if (con != null) {
+				println("Fetched data:")
+			}
+		} catch (ex: SQLException) {
+			println(ex.message);
+		}
+		return "done"
+	}
+
 	@PostMapping("/api/add/user")
 	fun createUser(@RequestBody getUserDetails: User): Int {
 		val newUser = User()
@@ -114,7 +156,7 @@ class TaskController() {
 		try {
 			if (con != null) {
 				val sql =
-					"insert into users(id, name, username, password) values (${newUser.id}, ${newUser.name}, ${newUser.username}, ${newUser.password})"
+					"insert into users(id, name, username, password) values ('${newUser.id}', '${newUser.name}', '${newUser.username}', '${newUser.password}')"
 				val query = con.createStatement()
 				val results = query.executeQuery(sql)
 				println("Fetched data:")
@@ -127,6 +169,10 @@ class TaskController() {
 			return 0
 		}
 		return 1
+
+		// Terminal command for testing post request:
+		//curl -X POST -H "Content-type: application/json" -d "{\"id\" : \"2\", \"name\" : \"Sarvesh\", \"username\" : \"cartman\", \"password\" : \"southpark\"}" "http://localhost:8080/api/add/user"
+
 	}
 }
 
@@ -137,12 +183,14 @@ fun formData(data: Map<String, String>): HttpRequest.BodyPublisher? {
 	return HttpRequest.BodyPublishers.ofString(result)
 }
 fun main(args: Array<String>) {
-	val userValues = mapOf("id" to "1", "name" to "Sarvesh", "username" to "cartman", "password" to "southpark")
-	val client = HttpClient.newBuilder().build()
+//	val userValues = mapOf("id" to "1", "name" to "Sarvesh", "username" to "cartman", "password" to "southpark")
+//	val client = HttpClient.newBuilder().build()
+//
+//	val request = HttpRequest.newBuilder()
+//		.uri(URI.create("https://localhost:8080/api/add/user"))
+//		.POST(formData(userValues))
 
-	val request = HttpRequest.newBuilder()
-		.uri(URI.create("https://localhost:8080/api/add/user"))
-		.POST(formData(userValues))
+
 	runApplication<ToDoApplication>(*args)
 }
 
