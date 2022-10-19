@@ -5,6 +5,7 @@ import org.springframework.boot.runApplication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity
 import org.springframework.beans.BeanUtils
 import org.springframework.beans.BeansException
@@ -35,6 +36,7 @@ public class User() {
 
 @Serializable
 data class BaseResponse(
+	var status: Int = 1,
 	var message: String = "",
 	var error: String = ""
 )
@@ -49,7 +51,8 @@ class ToDoApplication: Application() {
 
 @RestController
 class TaskController() {
-	val errorMapping = mapOf("[SQLITE_CONSTRAINT_PRIMARYKEY] A PRIMARY KEY constraint failed (UNIQUE constraint failed: users.username)" to "User already exists. Please choose a different username")
+	val errorMapping =
+		mapOf("[SQLITE_CONSTRAINT_PRIMARYKEY] A PRIMARY KEY constraint failed (UNIQUE constraint failed: users.username)" to "User already exists. Please choose a different username")
 
 	@GetMapping("/test")
 	fun connect_test(): String? {
@@ -65,7 +68,7 @@ class TaskController() {
 	}
 
 	@GetMapping("/api")
-	fun query(): String?{
+	fun query(): String? {
 		val con = conn;
 		val map: HashMap<String, String> = HashMap()
 		try {
@@ -73,10 +76,10 @@ class TaskController() {
 				val sql = "select count(*) from users"
 				val query = con.createStatement()
 				val results = query.executeQuery(sql)
-				while(results.next()){
+				while (results.next()) {
 					println(results.getString(1));
 				}
-			}else{
+			} else {
 				println("Database connection not set up")
 			}
 		} catch (ex: SQLException) {
@@ -95,6 +98,7 @@ class TaskController() {
 		} catch (e: BeansException) {
 			val error = errorMapping.getOrDefault(e.message, e.message).orEmpty()
 			println(error)
+			res.status = 0
 			res.error = error
 			return Json.encodeToString(listOf(res))
 		}
@@ -105,18 +109,58 @@ class TaskController() {
 					"insert into users(username, password) values ('${newUser.username}', '${newUser.password}')"
 				val query = con.createStatement()
 				query.executeUpdate(sql)
+				res.status = 1
 				res.message = "User added"
 				return Json.encodeToString(listOf(res))
 			}
 		} catch (ex: SQLException) {
 			val error = errorMapping.getOrDefault(ex.message, ex.message).orEmpty()
 			println(error)
+			res.status = 0
 			res.error = error
 			return Json.encodeToString(listOf(res))
 		}
 		return Json.encodeToString(listOf(res))
 		// Terminal command for testing post request:
 		//	curl -H "Content-Type: application/json" -d '{ "id": 6, "name": "Joe Bloggs", "username" : "cartman", "password" : "southpark" }' http://localhost:8080/api/add/user
+	}
+
+
+	@GetMapping("/api/authenticate")
+	fun authenticateUser(
+		@RequestParam(name = "username", required = true) username: String,
+		@RequestParam(name = "password", required = true) pass: String
+	): String {
+		val con = conn
+		val res = BaseResponse()
+
+		try {
+			if (con != null) {
+				val sql =
+					"select count(*) from users where username='${username}' and password='${pass}'"
+				val query = con.createStatement()
+				query.executeUpdate(sql)
+				val results = query.executeQuery(sql)
+				var numUsers = "0"
+				if(results != null){
+					res.status = 1
+					numUsers = results.getString(1)
+				}
+				if(numUsers == "0"){
+					res.status = 0
+					res.error = "User not authenticated"
+				}else {
+					res.status = 1
+					res.message = "User authenticated"
+				}
+			}
+		} catch (ex: SQLException) {
+			val error = errorMapping.getOrDefault(ex.message, ex.message).orEmpty()
+			println(error)
+			res.status = 0
+			res.error = error
+		}
+		return Json.encodeToString(listOf(res))
 	}
 }
 
