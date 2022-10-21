@@ -77,7 +77,7 @@ class TaskController() {
         val map: HashMap<String, String> = HashMap()
         try {
             if (con != null) {
-                val sql = "select count(*) from users"
+                val sql = "select * from users"
                 val query = con.createStatement()
                 val results = query.executeQuery(sql)
                 while (results.next()) {
@@ -95,22 +95,14 @@ class TaskController() {
 
     @PostMapping(value = ["/api/add/user"])
     fun createUser(@RequestBody getUserDetails: User): String {
-        val newUser = User()
+
         val res = BaseResponse()
-        try {
-            BeanUtils.copyProperties(getUserDetails, newUser)
-        } catch (e: BeansException) {
-            val error = errorMapping.getOrDefault(e.message, e.message).orEmpty()
-            println(error)
-            res.status = 0
-            res.error = error
-            return Json.encodeToString(listOf(res))
-        }
+
         val con = conn;
         try {
             if (con != null) {
                 val sql =
-                    "insert into users(username, password) values ('${newUser.username}', '${newUser.password}')"
+                    "insert into users(username, password) values ('${getUserDetails.username}', '${getUserDetails.password}')"
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
@@ -135,6 +127,7 @@ class TaskController() {
         @RequestParam(name = "username", required = true) username: String,
         @RequestParam(name = "password", required = true) pass: String
     ): String {
+        println(username)
         val con = conn
         val res = BaseResponse()
 
