@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
+var noteIdCounter = 0
 
 @Serializable
 data class User(
@@ -37,7 +38,6 @@ data class User(
 
 @Serializable
 data class Note(
-    val id: Int = -1,
     val text: String = "",
     val priority: Int = -1,
     val gid: Int = -1,
@@ -178,8 +178,35 @@ class TaskController() {
 
 
     @PostMapping("/api/add/task")
-    fun addTask() {
-        
+    fun addTask(@RequestBody getNoteDetails: Note): String {
+        val res = BaseResponse()
+
+        val con = conn
+        try {
+            if (con != null) {
+                val sql =
+                    "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
+                            "('${noteIdCounter}', " +
+                            "'${getNoteDetails.text}', " +
+                            "'${getNoteDetails.priority}', " +
+                            "'${getNoteDetails.gid}', " +
+                            "'${getNoteDetails.last_edit}', " +
+                            "'${getNoteDetails.due}')"
+                val query = con.createStatement()
+                query.executeUpdate(sql)
+                res.status = 1
+                res.message = "Note added ${noteIdCounter}"
+                ++noteIdCounter
+                return Json.encodeToString(listOf(res))
+            }
+        } catch (ex: SQLException) {
+            val error = "Error in note creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            println(error)
+            res.status = 0
+            res.error = error
+            return Json.encodeToString(listOf(res))
+        }
+        return Json.encodeToString(listOf(res))
     }
 }
 
