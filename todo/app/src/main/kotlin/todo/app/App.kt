@@ -36,6 +36,21 @@ data class User(
 }
 
 @Serializable
+data class Note(
+    val id: Int = -1,
+    val text: String = "",
+    val priority: Int = -1,
+    val gid: Int = -1,
+    val last_edit: String = "",
+    val due: String = ""
+) {
+    init {
+        println("Creating task")
+    }
+}
+
+
+@Serializable
 data class BaseResponse(
     @SerialName("status")
     var status: Int = 1,
@@ -158,6 +173,13 @@ class TaskController() {
             res.error = error
         }
         return Json.encodeToString(listOf(res))
+    }
+
+
+
+    @PostMapping("/api/add/task")
+    fun addTask() {
+        
     }
 }
 
