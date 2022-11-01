@@ -2,14 +2,9 @@ package todo.app
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.ResponseEntity
 import org.springframework.beans.BeanUtils
 import org.springframework.beans.BeansException
-import org.springframework.web.bind.annotation.RequestBody
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -20,11 +15,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import javafx.application.Application
 import javafx.stage.Stage
-import org.springframework.web.bind.annotation.RequestMapping
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-
-var noteIdCounter = 0
+import org.springframework.web.bind.annotation.*
 
 @Serializable
 data class User(
@@ -72,6 +65,21 @@ class ToDoApplication: Application() {
 class TaskController() {
     val errorMapping =
         mapOf("[SQLITE_CONSTRAINT_PRIMARYKEY] A PRIMARY KEY constraint failed (UNIQUE constraint failed: users.username)" to "User already exists. Please choose a different username")
+
+    var noteIdCounter: Int = -1
+
+    init {
+        val con = conn
+        if (con != null) {
+            val sql = "select max(id) from notes"
+            val query = con.createStatement()
+            val results = query.executeQuery(sql)
+            results.next()
+            noteIdCounter = results.getInt("count(*)")
+            print(noteIdCounter)
+        }
+    }
+
 
     @GetMapping("/test")
     fun connect_test(): String? {
@@ -208,6 +216,39 @@ class TaskController() {
         }
         return Json.encodeToString(listOf(res))
     }
+
+
+//    @PutMapping("/api/edit/task")
+//    fun editTask(@RequestBody getNoteDetails: Note): String {
+//        val res = BaseResponse()
+//
+//        val con = conn
+//        try {
+//            if (con != null) {
+//                val sql =
+//                    "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
+//                            "('${noteIdCounter}', " +
+//                            "'${getNoteDetails.text}', " +
+//                            "'${getNoteDetails.priority}', " +
+//                            "'${getNoteDetails.gid}', " +
+//                            "'${getNoteDetails.last_edit}', " +
+//                            "'${getNoteDetails.due}')"
+//                val query = con.createStatement()
+//                query.executeUpdate(sql)
+//                res.status = 1
+//                res.message = "Note added ${noteIdCounter}"
+//                ++noteIdCounter
+//                return Json.encodeToString(listOf(res))
+//            }
+//        } catch (ex: SQLException) {
+//            val error = "Error in note creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+//            println(error)
+//            res.status = 0
+//            res.error = error
+//            return Json.encodeToString(listOf(res))
+//        }
+//        return Json.encodeToString(listOf(res))
+//    }
 }
 
 
