@@ -194,7 +194,7 @@ class TaskController() {
             if (con != null) {
                 val sql =
                     "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
-                            "('${noteIdCounter++}', " +
+                            "('${noteIdCounter}', " +
                             "'${getNoteDetails.text}', " +
                             "'${getNoteDetails.priority}', " +
                             "'${getNoteDetails.gid}', " +
@@ -204,6 +204,7 @@ class TaskController() {
                 query.executeUpdate(sql)
                 res.status = 1
                 res.message = "Note added ${noteIdCounter}"
+                ++noteIdCounter
                 return Json.encodeToString(listOf(res))
             }
         } catch (ex: SQLException) {
@@ -215,39 +216,6 @@ class TaskController() {
         }
         return Json.encodeToString(listOf(res))
     }
-
-
-//    @PutMapping("/api/edit/task")
-//    fun editTask(@RequestBody getNoteDetails: Note): String {
-//        val res = BaseResponse()
-//
-//        val con = conn
-//        try {
-//            if (con != null) {
-//                val sql =
-//                    "UPDATE notes SET " +
-//                            "note_text = '${getNoteDetails.text}', " +
-//                            "priority = ${getNoteDetails.priority}, " +
-//                            "group_id = ${getNoteDetails.gid}, " +
-//                            "last_edited = '${getNoteDetails.last_edit}', " +
-//                            "due_date = '${getNoteDetails.due}' " +
-//                        "WHERE note_id = ${getNoteDetails.id}"
-//                val query = con.createStatement()
-//                query.executeUpdate(sql)
-//                res.status = 1
-//                res.message = "Note edited ${getNoteDetails.id}"
-//                return Json.encodeToString(listOf(res))
-//            }
-//        } catch (ex: SQLException) {
-//            val error = "Error in note edit"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
-//            println(error)
-//            res.status = 0
-//            res.error = error
-//            return Json.encodeToString(listOf(res))
-//        }
-//        return Json.encodeToString(listOf(res))
-//    }
-
 
 }
 
