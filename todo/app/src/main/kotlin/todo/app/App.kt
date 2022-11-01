@@ -31,6 +31,7 @@ data class User(
 
 @Serializable
 data class Note(
+    val id: Int = -1,
     val text: String = "",
     val priority: Int = -1,
     val gid: Int = -1,
@@ -66,17 +67,16 @@ class TaskController() {
     val errorMapping =
         mapOf("[SQLITE_CONSTRAINT_PRIMARYKEY] A PRIMARY KEY constraint failed (UNIQUE constraint failed: users.username)" to "User already exists. Please choose a different username")
 
+    // counter for getting unique note IDs -> replicate for group IDs
     var noteIdCounter: Int = -1
-
     init {
         val con = conn
         if (con != null) {
-            val sql = "select max(id) from notes"
+            val sql = "select max(note_id) from notes"
             val query = con.createStatement()
             val results = query.executeQuery(sql)
             results.next()
-            noteIdCounter = results.getInt("count(*)")
-            print(noteIdCounter)
+            noteIdCounter = results.getInt("max(note_id)") + 1
         }
     }
 
@@ -194,7 +194,7 @@ class TaskController() {
             if (con != null) {
                 val sql =
                     "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
-                            "('${noteIdCounter}', " +
+                            "('${noteIdCounter++}', " +
                             "'${getNoteDetails.text}', " +
                             "'${getNoteDetails.priority}', " +
                             "'${getNoteDetails.gid}', " +
@@ -204,7 +204,6 @@ class TaskController() {
                 query.executeUpdate(sql)
                 res.status = 1
                 res.message = "Note added ${noteIdCounter}"
-                ++noteIdCounter
                 return Json.encodeToString(listOf(res))
             }
         } catch (ex: SQLException) {
@@ -226,22 +225,21 @@ class TaskController() {
 //        try {
 //            if (con != null) {
 //                val sql =
-//                    "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
-//                            "('${noteIdCounter}', " +
-//                            "'${getNoteDetails.text}', " +
-//                            "'${getNoteDetails.priority}', " +
-//                            "'${getNoteDetails.gid}', " +
-//                            "'${getNoteDetails.last_edit}', " +
-//                            "'${getNoteDetails.due}')"
+//                    "UPDATE notes SET " +
+//                            "note_text = '${getNoteDetails.text}', " +
+//                            "priority = ${getNoteDetails.priority}, " +
+//                            "group_id = ${getNoteDetails.gid}, " +
+//                            "last_edited = '${getNoteDetails.last_edit}', " +
+//                            "due_date = '${getNoteDetails.due}' " +
+//                        "WHERE note_id = ${getNoteDetails.id}"
 //                val query = con.createStatement()
 //                query.executeUpdate(sql)
 //                res.status = 1
-//                res.message = "Note added ${noteIdCounter}"
-//                ++noteIdCounter
+//                res.message = "Note edited ${getNoteDetails.id}"
 //                return Json.encodeToString(listOf(res))
 //            }
 //        } catch (ex: SQLException) {
-//            val error = "Error in note creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+//            val error = "Error in note edit"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
 //            println(error)
 //            res.status = 0
 //            res.error = error
@@ -249,6 +247,8 @@ class TaskController() {
 //        }
 //        return Json.encodeToString(listOf(res))
 //    }
+
+
 }
 
 
