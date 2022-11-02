@@ -43,6 +43,15 @@ data class Note(
     }
 }
 
+data class Group (
+    val group_id: Int = -1,
+    val group_name: String = ""
+) {
+    init {
+        println("Creating group")
+    }
+}
+
 
 @Serializable
 data class BaseResponse(
@@ -69,14 +78,20 @@ class TaskController() {
 
     // counter for getting unique note IDs -> replicate for group IDs
     var noteIdCounter: Int = -1
+    var groupIdCounter : Int = -1
     init {
         val con = conn
         if (con != null) {
-            val sql = "select max(note_id) from notes"
-            val query = con.createStatement()
-            val results = query.executeQuery(sql)
-            results.next()
-            noteIdCounter = results.getInt("max(note_id)") + 1
+            val sqlMaxNote = "select max(note_id) from notes"
+            val sqlMaxGroup = "select max(group_id) from groups"
+            val queryMaxNote = con.createStatement()
+            val queryMaxGroup = con.createStatement()
+            val resultsMaxNote = queryMaxNote.executeQuery(sqlMaxNote)
+            val resultsMaxGroup = queryMaxGroup.executeQuery(sqlMaxGroup)
+            resultsMaxNote.next()
+            resultsMaxGroup.next()
+            noteIdCounter = resultsMaxNote.getInt("max(note_id)") + 1
+            groupIdCounter = resultsMaxGroup.getInt("max(group_id)") + 1
         }
     }
 
@@ -214,6 +229,8 @@ class TaskController() {
             return Json.encodeToString(listOf(res))
         }
         return Json.encodeToString(listOf(res))
+        // curl -H "Content-Type: application/json" -d '{"id": 4, "text": "ll", "priority": 2, "gid": 5, "last_edit":"gh", "due":"hh"}' http://localhost:8080/api/add/task
+
     }
 
 
@@ -308,6 +325,35 @@ class TaskController() {
         return final
     }
 
+    @PostMapping("/api/add/group")
+    fun addGroup(@RequestBody getGroupDetails: Group): String {
+        val res = BaseResponse()
+
+        val con = conn
+        try {
+            if (con != null) {
+                val sql =
+                    "insert into groups(group_id, group_name) values " +
+                            "('${groupIdCounter}', " +
+                            "'${getGroupDetails.group_name}')"
+                val query = con.createStatement()
+                query.executeUpdate(sql)
+                res.status = 1
+                res.message = "Group added ${groupIdCounter}"
+                ++groupIdCounter
+                return Json.encodeToString(listOf(res))
+            }
+        } catch (ex: SQLException) {
+            val error = "Error in group creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            println(error)
+            res.status = 0
+            res.error = error
+            return Json.encodeToString(listOf(res))
+        }
+        return Json.encodeToString(listOf(res))
+
+        //	curl -H "Content-Type: application/json" -d '{ "group_id": 1, "group_name": "School Work" }' http://localhost:8080/api/add/group
+    }
 }
 
 
