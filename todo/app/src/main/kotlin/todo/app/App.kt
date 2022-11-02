@@ -364,7 +364,7 @@ class TaskController() {
                 val sql =
                     "UPDATE groups SET " +
                             "group_name = '${getNoteDetails.group_name}' " +
-                            "WHERE note_id = ${getNoteDetails.group_id}"
+                            "WHERE group_id = ${getNoteDetails.group_id}"
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
