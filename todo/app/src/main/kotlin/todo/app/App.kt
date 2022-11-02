@@ -331,9 +331,7 @@ class TaskController() {
 
         val con = conn
         try {
-            println("OUTSIDE: Group name is: ${getGroupDetails.group_name}")
             if (con != null) {
-                println("Group name is: ${getGroupDetails.group_name}")
                 val sql =
                     "insert into groups(group_id, group_name) values " +
                             "('${groupIdCounter}', " +
@@ -344,8 +342,6 @@ class TaskController() {
                 res.message = "Group added ${groupIdCounter}"
                 ++groupIdCounter
                 return Json.encodeToString(listOf(res))
-            } else {
-                println("Connection is null: $conn")
             }
         } catch (ex: SQLException) {
             val error = "Error in group creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
