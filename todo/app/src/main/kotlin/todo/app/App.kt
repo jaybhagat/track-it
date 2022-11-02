@@ -251,6 +251,34 @@ class TaskController() {
         // curl -X PUT -H "Content-Type: application/json" -d '{"id": 4, "text": "ll", "priority": 2, "gid": 5, "last_edit":"gh", "due":"hh"}' http://localhost:8080/api/edit/task
     }
 
+    @DeleteMapping("/api/delete/task/{id}")
+    fun deleteTask(@PathVariable id: Int): String {
+        println("h")
+        val res = BaseResponse()
+
+        val con = conn
+        try {
+            if (con != null) {
+                val sql =
+                    "DELETE FROM notes WHERE note_id = ${id}"
+                val query = con.createStatement()
+                query.executeUpdate(sql)
+                res.status = 1
+                res.message = "Note deleted ${id}"
+                return Json.encodeToString(listOf(res))
+            }
+        } catch (ex: SQLException) {
+            val error = "Error in note deletion"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            println(error)
+            res.status = 0
+            res.error = error
+            return Json.encodeToString(listOf(res))
+        }
+        return Json.encodeToString(listOf(res))
+        // curl command for testing:
+        //  curl -i -X DELETE localhost:8080/api/delete/task/1/
+
+    }
 
 }
 
