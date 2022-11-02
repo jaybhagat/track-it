@@ -97,7 +97,6 @@ class TaskController() {
     @GetMapping("/api")
     fun query(): String? {
         val con = conn;
-        val map: HashMap<String, String> = HashMap()
         try {
             if (con != null) {
                 val sql = "select * from users"
@@ -278,6 +277,35 @@ class TaskController() {
         // curl command for testing:
         //  curl -i -X DELETE localhost:8080/api/delete/task/1/
 
+    }
+
+    @GetMapping("/notes")
+    fun notes_query(): List<MutableMap<String, String>> {
+        val con = conn;
+        val final = mutableListOf<MutableMap<String,String>>()
+        try {
+            if (con != null) {
+                val sql = "select * from notes"
+                val query = con.createStatement()
+                val results = query.executeQuery(sql)
+                var counter = 0
+                while (results.next()) {
+                    final.add(mutableMapOf(
+                        "id" to results.getString(1),
+                        "text" to results.getString(2),
+                        "priority" to results.getString(3),
+                        "gid" to results.getString(4),
+                        "last_edit" to results.getString(5),
+                        "due" to results.getString(6)
+                    ))
+                }
+            } else {
+                println("Database connection not set up")
+            }
+        } catch (ex: SQLException) {
+            println(errorMapping.getOrDefault(ex.message, ex.message));
+        }
+        return final
     }
 
 }
