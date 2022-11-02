@@ -110,8 +110,13 @@ class TaskController() {
     }
 
     @GetMapping("/api")
-    fun query(): String? {
-        val con = conn;
+    fun query(connection: Connection? = null): String? {
+        var con = conn;
+        if(connection != null){
+           con = connection
+        }
+        val map: HashMap<String, String> = HashMap()
+
         try {
             if (con != null) {
                 val sql = "select * from users"
@@ -129,13 +134,14 @@ class TaskController() {
         return "done"
     }
 
+    fun user_create(getUserDetails: User, connection: Connection? = null): String{
+        var con = conn;
+        if(connection != null){
+            con = connection
+        }
 
-    @PostMapping(value = ["/api/add/user"])
-    fun createUser(@RequestBody getUserDetails: User): String {
+        var res = BaseResponse()
 
-        val res = BaseResponse()
-
-        val con = conn;
         try {
             if (con != null) {
                 val sql =
@@ -154,18 +160,22 @@ class TaskController() {
             return Json.encodeToString(listOf(res))
         }
         return Json.encodeToString(listOf(res))
+    }
+
+    @PostMapping(value = ["/api/add/user"])
+    fun createUser(@RequestBody getUserDetails: User): String {
+        return user_create(getUserDetails)
+
+
         // Terminal command for testing post request:
         //	curl -H "Content-Type: application/json" -d '{ "id": 6, "name": "Joe Bloggs", "username" : "cartman", "password" : "southpark" }' http://localhost:8080/api/add/user
     }
 
-
-    @GetMapping("/api/authenticate")
-    fun authenticateUser(
-        @RequestParam(name = "username", required = true) username: String,
-        @RequestParam(name = "password", required = true) pass: String
-    ): String {
-        println(username)
-        val con = conn
+    fun isValidUser(username: String, pass: String, connection: Connection? = null): String{
+        var con = conn
+        if(connection != null){
+            con = connection
+        }
         val res = BaseResponse()
 
         try {
@@ -197,6 +207,14 @@ class TaskController() {
         return Json.encodeToString(listOf(res))
     }
 
+    @GetMapping("/api/authenticate")
+    fun authenticateUser(
+        @RequestParam(name = "username", required = true) username: String,
+        @RequestParam(name = "password", required = true) pass: String
+    ): String {
+        println(username)
+        return isValidUser(username, pass)
+    }
 
 
     @PostMapping("/api/add/task")
@@ -416,7 +434,7 @@ fun main(args: Array<String>) {
     try {
         val url = "jdbc:sqlite:src/main/kotlin/assets/database/todo.db"
         conn = DriverManager.getConnection(url)
-        println("Connection to SQLite has been established.")
+        println("Connection to production SQLite has been established.")
     } catch (e: SQLException) {
         println(e.message)
     }
