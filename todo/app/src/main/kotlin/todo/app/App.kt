@@ -354,6 +354,34 @@ class TaskController() {
 
         //	curl -H "Content-Type: application/json" -d '{ "group_id": 1, "group_name": "School Work" }' http://localhost:8080/api/add/group
     }
+    @PutMapping("/api/edit/group")
+    fun editGroup(@RequestBody getNoteDetails: Group): String {
+        val res = BaseResponse()
+
+        val con = conn
+        try {
+            if (con != null) {
+                val sql =
+                    "UPDATE groups SET " +
+                            "group_name = '${getNoteDetails.group_name}' " +
+                            "WHERE note_id = ${getNoteDetails.group_id}"
+                val query = con.createStatement()
+                query.executeUpdate(sql)
+                res.status = 1
+                res.message = "Group edited ${getNoteDetails.group_id}"
+                return Json.encodeToString(listOf(res))
+            }
+        } catch (ex: SQLException) {
+            val error = "Error in group edit"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            println(error)
+            res.status = 0
+            res.error = error
+            return Json.encodeToString(listOf(res))
+        }
+        return Json.encodeToString(listOf(res))
+        // curl command for testing:
+        // curl -X PUT -H "Content-Type: application/json" -d '{"group_id": 1, "group_name": "School Work"}' http://localhost:8080/api/edit/group
+    }
 }
 
 
