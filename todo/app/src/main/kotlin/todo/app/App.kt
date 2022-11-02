@@ -269,7 +269,6 @@ class TaskController() {
 
     @DeleteMapping("/api/delete/task/{id}")
     fun deleteTask(@PathVariable id: Int): String {
-        println("h")
         val res = BaseResponse()
 
         val con = conn
@@ -381,6 +380,32 @@ class TaskController() {
         return Json.encodeToString(listOf(res))
         // curl command for testing:
         // curl -X PUT -H "Content-Type: application/json" -d '{"group_id": 1, "group_name": "School Work"}' http://localhost:8080/api/edit/group
+    }
+    @DeleteMapping("/api/delete/group/{id}")
+    fun deleteGroup(@PathVariable id: Int): String {
+        val res = BaseResponse()
+
+        val con = conn
+        try {
+            if (con != null) {
+                val sql =
+                    "DELETE FROM groups WHERE group_id = $id"
+                val query = con.createStatement()
+                query.executeUpdate(sql)
+                res.status = 1
+                res.message = "Group deleted $id"
+                return Json.encodeToString(listOf(res))
+            }
+        } catch (ex: SQLException) {
+            val error = "Error in group deletion"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            println(error)
+            res.status = 0
+            res.error = error
+            return Json.encodeToString(listOf(res))
+        }
+        return Json.encodeToString(listOf(res))
+        // curl command for testing:
+        //  curl -i -X DELETE localhost:8080/api/delete/group/1/
     }
 }
 
