@@ -38,9 +38,9 @@ data class Note(
     val last_edit: String = "",
     val due: String = ""
 ) {
-    init {
-        println("Creating task")
-    }
+//    init {
+//        println("Creating task")
+//    }
 }
 
 data class Group (
@@ -313,7 +313,7 @@ class TaskController() {
 
     }
 
-    @GetMapping("/notes")
+    @GetMapping("/api/notes")
     fun notes_query(): List<MutableMap<String, String>> {
         val con = conn;
         val final = mutableListOf<MutableMap<String,String>>()
