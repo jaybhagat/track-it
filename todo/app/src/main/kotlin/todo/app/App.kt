@@ -322,7 +322,6 @@ class TaskController() {
                 val sql = "select * from notes"
                 val query = con.createStatement()
                 val results = query.executeQuery(sql)
-                var counter = 0
                 while (results.next()) {
                     final.add(mutableMapOf(
                         "id" to results.getString(1),
@@ -425,8 +424,30 @@ class TaskController() {
         // curl command for testing:
         //  curl -i -X DELETE localhost:8080/api/delete/group/1/
     }
+    @GetMapping("/groups")
+    fun groups_query(): List<MutableMap<String, String>> {
+        val con = conn;
+        val final = mutableListOf<MutableMap<String,String>>()
+        try {
+            if (con != null) {
+                val sql = "select * from groups"
+                val query = con.createStatement()
+                val results = query.executeQuery(sql)
+                while (results.next()) {
+                    final.add(mutableMapOf(
+                        "group_id" to results.getString(1),
+                        "group_name" to results.getString(2)
+                    ))
+                }
+            } else {
+                println("Database connection not set up")
+            }
+        } catch (ex: SQLException) {
+            println(errorMapping.getOrDefault(ex.message, ex.message));
+        }
+        return final
+    }
 }
-
 
 fun main(args: Array<String>) {
 
