@@ -31,11 +31,6 @@ class ToDoApplicationTests {
 		}
 	}
 
-	@Test
-	fun queryTest(){
-		val result = ToDoInst.query(conn)
-		Assertions.assertEquals(result, "done")
-	}
 
 	@Test
 	fun userCreateTest() {
@@ -58,7 +53,15 @@ class ToDoApplicationTests {
 	}
 
 	@Test
-	fun contextLoads() {
+	fun validDateTest(){
+		val result = ToDoInst.isValidDate("10/10/2025")
+		Assertions.assertEquals(result, true)
+	}
+
+	@Test
+	fun notvalidDateTest(){
+		val result = ToDoInst.isValidDate("10/10/2020")
+		Assertions.assertEquals(result, false)
 	}
 
 }

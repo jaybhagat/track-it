@@ -18,6 +18,7 @@ import javafx.stage.Stage
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.springframework.web.bind.annotation.*
+import java.util.Calendar
 
 @Serializable
 data class User(
@@ -110,11 +111,8 @@ class TaskController() {
     }
 
     @GetMapping("/api")
-    fun query(connection: Connection? = null): String? {
+    fun query(): String? {
         var con = conn;
-        if(connection != null){
-           con = connection
-        }
         val map: HashMap<String, String> = HashMap()
 
         try {
@@ -217,9 +215,58 @@ class TaskController() {
     }
 
 
+    fun isValidDate(user_date: String): Boolean{
+        val split_date = user_date.split("/") //month, day, year
+
+        if(split_date.size != 3){
+            return false
+        }
+
+        var user_month = 0
+        var user_day = 0
+        var user_year = 0
+
+        val c = Calendar.getInstance()
+        val year = c.get(Calendar.YEAR)
+        val month = c.get(Calendar.MONTH)
+        val day = c.get(Calendar.DAY_OF_MONTH)
+
+        try{
+            user_month = split_date[0].toInt()
+            user_day = split_date[1].toInt()
+            user_year = split_date[2].toInt()
+        }catch (nfe: NumberFormatException){
+            return false
+        }
+
+        if(year > user_year){
+            return false
+        }else if(year == user_year){
+            if(month > user_month){
+                return false
+            }else if(month == user_month && day > user_day){
+                return false
+            }
+        }
+
+        return true
+    }
+
     @PostMapping("/api/add/task")
     fun addTask(@RequestBody getNoteDetails: Note): String {
         val res = BaseResponse()
+
+        if(!isValidDate(getNoteDetails.due)){
+            res.status = 0
+            res.error = "Invalid date"
+            return Json.encodeToString(listOf(res))
+        }
+
+        if(getNoteDetails.priority <= 0 || getNoteDetails.priority > 3){
+            res.status = 0
+            res.error = "Invalid priority. Please choose a priority between 1 and 3"
+            return Json.encodeToString(listOf(res))
+        }
 
         val con = conn
         try {
