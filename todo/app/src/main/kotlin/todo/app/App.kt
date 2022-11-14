@@ -14,10 +14,13 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import javafx.application.Application
+import javafx.scene.Scene
+import javafx.scene.layout.Pane
 import javafx.stage.Stage
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.springframework.web.bind.annotation.*
+import todo.app.view.View
 import java.util.Calendar
 
 @Serializable
@@ -69,6 +72,9 @@ var conn: Connection? = null
 @SpringBootApplication
 class ToDoApplication: Application() {
     override fun start(stage: Stage) {
+        stage.title = "TrackIt"
+        stage.scene = Scene(View(), 600.0, 600.0)
+        stage.show()
     }
 }
 
@@ -508,4 +514,5 @@ fun main(args: Array<String>) {
     }
 
     runApplication<ToDoApplication>(*args)
+    Application.launch(ToDoApplication::class.java)
 }
