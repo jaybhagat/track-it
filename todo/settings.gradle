@@ -14,4 +14,4 @@ pluginManagement {
 }
 
 rootProject.name = 'todo'
-include('app', 'console')
+include('app', 'console', 'ui')

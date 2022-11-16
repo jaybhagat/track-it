@@ -20,7 +20,6 @@ import javafx.stage.Stage
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import org.springframework.web.bind.annotation.*
-import todo.app.view.View
 import java.util.Calendar
 
 @Serializable
@@ -71,11 +70,7 @@ var conn: Connection? = null
 
 @SpringBootApplication
 class ToDoApplication: Application() {
-    override fun start(stage: Stage) {
-        stage.title = "TrackIt"
-        stage.scene = Scene(View(), 600.0, 600.0)
-        stage.show()
-    }
+    override fun start(stage: Stage) {}
 }
 
 @RestController
@@ -514,5 +509,4 @@ fun main(args: Array<String>) {
     }
 
     runApplication<ToDoApplication>(*args)
-    Application.launch(ToDoApplication::class.java)
 }
