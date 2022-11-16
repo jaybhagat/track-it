@@ -14,6 +14,7 @@ class ToDoApplication: Application() {
     override fun start(stage: Stage) {
         stage.title = "TrackIt"
         stage.scene = Scene(View(), 600.0, 600.0)
+        stage.apply{minWidth= 500.0; minHeight=450.0}
         stage.show()
     }
 }

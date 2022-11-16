@@ -46,6 +46,7 @@ data class Note(
 //    }
 }
 
+@Serializable
 data class Group (
     val group_id: Int = -1,
     val group_name: String = ""
@@ -283,7 +284,7 @@ class TaskController() {
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
-                res.message = "Note added ${noteIdCounter}"
+                res.message = "${noteIdCounter}"
                 ++noteIdCounter
                 return Json.encodeToString(listOf(res))
             }
@@ -403,7 +404,7 @@ class TaskController() {
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
-                res.message = "Group added ${groupIdCounter}"
+                res.message = "${groupIdCounter}"
                 ++groupIdCounter
                 return Json.encodeToString(listOf(res))
             }
