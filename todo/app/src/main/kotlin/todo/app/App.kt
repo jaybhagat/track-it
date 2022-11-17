@@ -2,20 +2,10 @@ package todo.app
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.http.ResponseEntity
-import org.springframework.beans.BeanUtils
-import org.springframework.beans.BeansException
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
-import java.io.BufferedReader
-import java.io.DataOutputStream
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import javafx.application.Application
-import javafx.scene.Scene
-import javafx.scene.layout.Pane
 import javafx.stage.Stage
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
@@ -39,12 +29,9 @@ data class Note(
     val priority: Int = -1,
     val gid: Int = -1,
     val last_edit: String = "",
-    val due: String = ""
-) {
-//    init {
-//        println("Creating task")
-//    }
-}
+    val due: String = "",
+    val idx: Int = -1,
+) { }
 
 @Serializable
 data class Group (
@@ -233,20 +220,20 @@ class TaskController() {
         val month = c.get(Calendar.MONTH)
         val day = c.get(Calendar.DAY_OF_MONTH)
 
-        try{
+        try {
             user_month = split_date[0].toInt()
             user_day = split_date[1].toInt()
             user_year = split_date[2].toInt()
-        }catch (nfe: NumberFormatException){
+        } catch (nfe: NumberFormatException) {
             return false
         }
 
-        if(year > user_year){
+        if (year > user_year){
             return false
-        }else if(year == user_year){
-            if(month > user_month){
+        } else if (year == user_year) {
+            if (month > user_month) {
                 return false
-            }else if(month == user_month && day > user_day){
+            } else if (month == user_month && day > user_day) {
                 return false
             }
         }
@@ -274,13 +261,14 @@ class TaskController() {
         try {
             if (con != null) {
                 val sql =
-                    "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date) values " +
+                    "insert into notes(note_id, note_text, priority, group_id, last_edited, due_date, idx) values " +
                             "('${noteIdCounter}', " +
                             "'${getNoteDetails.text}', " +
                             "'${getNoteDetails.priority}', " +
                             "'${getNoteDetails.gid}', " +
                             "'${getNoteDetails.last_edit}', " +
-                            "'${getNoteDetails.due}')"
+                            "'${getNoteDetails.due}', " +
+                            "'${getNoteDetails.idx}')"
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
@@ -314,7 +302,8 @@ class TaskController() {
                             "priority = ${getNoteDetails.priority}, " +
                             "group_id = ${getNoteDetails.gid}, " +
                             "last_edited = '${getNoteDetails.last_edit}', " +
-                            "due_date = '${getNoteDetails.due}' " +
+                            "due_date = '${getNoteDetails.due}', " +
+                            "idx = '${getNoteDetails.idx}', " +
                             "WHERE note_id = ${getNoteDetails.id}"
                 val query = con.createStatement()
                 query.executeUpdate(sql)
@@ -378,7 +367,8 @@ class TaskController() {
                         "priority" to results.getString(3),
                         "gid" to results.getString(4),
                         "last_edit" to results.getString(5),
-                        "due" to results.getString(6)
+                        "due" to results.getString(6),
+                        "idx" to results.getString(7)
                     ))
                 }
             } else {
