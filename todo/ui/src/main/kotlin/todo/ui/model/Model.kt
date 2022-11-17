@@ -2,6 +2,7 @@ package todo.app.model
 
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
+import todo.app.view.sideBar
 
 
 object Model: Observable {
@@ -21,6 +22,7 @@ object Model: Observable {
     fun addGroup(group_name: String, gid: Int){
         var new_group = Group(gid)
         gidMappings.put(group_name, new_group)
+        sideBar.createGroups()
     }
 
     fun addNote(gname: String, gid: Int, note_id: Int, text: String, priority: Int, last_edit: String, due: String){
@@ -29,7 +31,9 @@ object Model: Observable {
         new_note.priority = priority
         new_note.last_edit = last_edit
         new_note.due = due
-        Model.gidMappings[gname]!!.notes.add(new_note)
+        println(gname)
+        gidMappings[gname]!!.notes.add(new_note)
+        broadcast()
     }
 
     /**
@@ -46,7 +50,7 @@ object Model: Observable {
 
     init {
         populate()
-        gidMappings.put("noGroup", Group(-1))
+        addGroup("noGroup", -1)
 
     }
 
@@ -54,9 +58,7 @@ object Model: Observable {
      * function to read database and populate groups and notes
      */
     fun populate() {
-        /**
-         * TO DO: Read from dtaabase
-         */
+
         broadcast()
     }
 
