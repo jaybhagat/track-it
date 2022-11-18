@@ -1,4 +1,5 @@
 module todo.app {
+    requires transitive todo.dtos;
     requires kotlin.stdlib;
     requires javafx.graphics;
     requires javafx.controls;
