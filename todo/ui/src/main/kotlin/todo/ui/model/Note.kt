@@ -7,4 +7,5 @@ class Note(id: Int, gid: Int) {
     var gid = gid
     var last_edit: String = ""
     var due: String = ""
+    var idx = -1
 }
