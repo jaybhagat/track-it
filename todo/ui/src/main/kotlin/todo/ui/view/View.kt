@@ -20,6 +20,7 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.*
 import todo.console.*
 import java.text.DateFormat
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
@@ -77,7 +78,7 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
         Model.addListener(this)
         invalidated(null)
 
-        if (name == "noGroup") {
+        if (name == "Ungrouped") {
             checkBox.isSelected = true
             NoteView.show(name)
         }
@@ -170,7 +171,6 @@ class toolBar(){
 
         val text_note = TextField("New note")
         val text_group = TextField("Add to existing group")
-//        val due_date = TextField("Due Date (month/day/year)")
         val due_date = DatePicker()
         val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
 
@@ -226,15 +226,14 @@ class toolBar(){
                     val last_edit = month + "/" + day + "/" + year
                     println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
-                        group_text = "noGroup"
-                        println("Adding to no group because group you enetered doesn't exist")
+                        group_text = "Ungrouped Notes"
+                        println("Adding to no group because group you entered doesn't exist")
                     }
                     Model.addNote(group_text, gid, note_id, text_note.getText(), priority, last_edit, due_date.value.format(formatter))
                 }
 
                 text_note.text = "New note"
                 text_group.text = "Add to existing group"
-//                due_date.text = "Due Date (month/day/year)"
                 high_prio.setSelected(false)
                 med_prio.setSelected(false)
                 low_prio.setSelected(false)
@@ -275,8 +274,23 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         })
         spacing = 10.0
         padding = Insets(10.0)
+
+        delete_button.setOnAction() {
+            deleteNote()
+        }
     }
 
+    fun deleteNote() = runBlocking<Unit> {
+        GlobalScope.launch(Dispatchers.IO) {
+            val response = (async { HttpRequest.deleteTask(note_id.toString()) }).await()
+
+            if ( !response.status.isSuccess()) {
+                println("There was an error in deleting the note.")
+            } else {
+                Model.deleteNote(gname, note_id)
+            }
+        }
+    }
 }
 
 

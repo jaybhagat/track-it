@@ -6,6 +6,7 @@ import todo.app.view.sideBar
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import todo.console.*
+import java.util.function.Predicate
 
 object Model: Observable {
 
@@ -38,6 +39,30 @@ object Model: Observable {
         broadcast()
     }
 
+    fun deleteNote(gname: String, note_id: Int) {
+        val check = Predicate { note: Note -> note.id == note_id }
+        val deleted = gidMappings[gname]!!.notes.find { x: Note -> check.test(x) }
+        gidMappings[gname]!!.notes.removeIf { x: Note -> check.test(x) }
+
+        gidMappings[gname]!!.notes.forEach { x: Note ->
+            if ( x.idx >= deleted!!.idx ) { x.idx-- }
+        }
+        broadcast()
+    }
+
+    fun editNote(gname: String, gid: Int, note_id: Int, text: String, priority: Int, last_edit: String, due: String) {
+        gidMappings[gname]!!.notes.forEach { x: Note ->
+            if ( x.id == note_id ) {
+                x.gid = gid
+                x.text = text
+                x.priority = priority
+                x.last_edit = last_edit
+                x.due = due
+            }
+        }
+        broadcast()
+    }
+
     /**
      * Call this function to broadcast any changes to view/listeners
      */
@@ -52,7 +77,7 @@ object Model: Observable {
 
     init {
         populate()
-        addGroup("noGroup", -1)
+        addGroup("Ungrouped", -1)
     }
 
     /**

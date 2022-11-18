@@ -303,7 +303,7 @@ class TaskController() {
                             "group_id = ${getNoteDetails.gid}, " +
                             "last_edited = '${getNoteDetails.last_edit}', " +
                             "due_date = '${getNoteDetails.due}', " +
-                            "idx = '${getNoteDetails.idx}', " +
+                            "idx = '${getNoteDetails.idx}' " +
                             "WHERE note_id = ${getNoteDetails.id}"
                 val query = con.createStatement()
                 query.executeUpdate(sql)
