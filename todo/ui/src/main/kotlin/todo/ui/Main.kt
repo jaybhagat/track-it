@@ -1,12 +1,7 @@
-package todo.console
+package todo.ui
 
-import io.ktor.http.*
-import java.math.BigInteger
-import java.security.MessageDigest
-import kotlinx.coroutines.*
 import javafx.application.Application
 import javafx.scene.Scene
-import javafx.scene.layout.Pane
 import javafx.stage.Stage
 import todo.app.view.View
 
