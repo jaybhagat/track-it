@@ -76,6 +76,11 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
 
         Model.addListener(this)
         invalidated(null)
+
+        if (name == "noGroup") {
+            checkBox.isSelected = true
+            NoteView.show(name)
+        }
     }
 
     override fun invalidated(observable: Observable?) {
@@ -193,7 +198,7 @@ class toolBar(){
         create_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                val group_text = text_group.getText()
+                var group_text = text_group.getText()
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
@@ -220,6 +225,10 @@ class toolBar(){
                     val day = c.get(Calendar.DAY_OF_MONTH).toString()
                     val last_edit = month + "/" + day + "/" + year
                     println(last_edit)
+                    if (!Model.gidMappings.containsKey(group_text)) {
+                        group_text = "noGroup"
+                        println("Adding to no group because group you enetered doesn't exist")
+                    }
                     Model.addNote(group_text, gid, note_id, text_note.getText(), priority, last_edit, due_date.value.format(formatter))
                 }
 
