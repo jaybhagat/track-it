@@ -21,6 +21,8 @@ object APIConstants {
     const val DELETE_TASK = "/api/delete/task"
     const val GET_TASK = "/api/notes"
     const val ADD_GROUP = "/api/add/group"
+    const val GET_GROUP_TASK = "/api/group/notes"
+    const val GET_GROUPS = "/groups"
 }
 
 
@@ -91,5 +93,19 @@ object HttpRequest {
         }
         val body = Json.decodeFromString<List<BaseResponse>>(response.bodyAsText())
         return body[0]
+    }
+
+    suspend fun getGroups(): List<MutableMap<String, String>>{
+        val response: HttpResponse = client.get(APIConstants.API_BASE_URL + APIConstants.GET_GROUPS)
+        return Json.decodeFromString<List<MutableMap<String, String>>>(response.bodyAsText())
+    }
+
+    suspend fun getTasksFromGroup(gid: Int): List<MutableMap<String, String>> {
+        val response: HttpResponse = client.get(APIConstants.API_BASE_URL + APIConstants.GET_GROUP_TASK){
+            url {
+                parameters.append("gid", gid.toString())
+            }
+        }
+        return Json.decodeFromString<List<MutableMap<String, String>>>(response.bodyAsText())
     }
 }

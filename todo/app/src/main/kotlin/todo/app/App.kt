@@ -486,6 +486,43 @@ class TaskController() {
         }
         return final
     }
+
+
+    @GetMapping("/api/group/notes")
+    fun getNotesFromGroup(
+        @RequestParam(name = "gid", required = true) gid: String,
+    ): List<MutableMap<String, String>>{
+        var groupid = gid.toInt()
+        val con = conn;
+        val final = mutableListOf<MutableMap<String,String>>()
+        try {
+            if (con != null) {
+                val sql = "select * from notes where group_id='${groupid}'"
+                val query = con.createStatement()
+                val results = query.executeQuery(sql)
+                while (results.next()) {
+                    final.add(
+                        mutableMapOf(
+                            "id" to results.getString(1),
+                            "text" to results.getString(2),
+                            "priority" to results.getString(3),
+                            "gid" to results.getString(4),
+                            "last_edit" to results.getString(5),
+                            "due" to results.getString(6),
+                            "idx" to results.getString(7)
+                        )
+                    )
+                }
+            } else {
+                println("Database connection not set up")
+            }
+        }catch(ex: SQLException) {
+            println(errorMapping.getOrDefault(ex.message, ex.message));
+        }
+        return final
+
+
+    }
 }
 
 fun main(args: Array<String>) {
