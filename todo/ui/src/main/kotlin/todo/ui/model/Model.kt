@@ -94,7 +94,11 @@ object Model: Observable {
     }
 
     fun editGroup(old_gname: String, new_gname: String) {
-
+        val duplicateGroup = gidMappings[old_gname]
+        gidMappings.remove(old_gname)
+        if (duplicateGroup != null) {
+            gidMappings.put(new_gname, duplicateGroup)
+        }
     }
 
     /**

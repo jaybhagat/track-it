@@ -47,19 +47,38 @@ class View: BorderPane(), InvalidationListener {
     }
 }
 
-class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
+class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
+    var old_name: String = ""
     val text = TextField().apply {
         background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0) ))
         text = name
-//        textProperty().addListener {
-//                _, oldValue, newValue ->
-//            if (!Model.gidMappings.containsKey(newValue)) {
-//                Model.editGroup(oldValue, newValue)
-//            }
-//            else {
-//                text = oldValue
-//            }
-//        }
+        focusedProperty().addListener { observable, oldValue, newValue ->
+            if (newValue) {
+                old_name = text
+            }
+            if (!newValue) {
+                if (Model.gidMappings.containsKey(text)) {
+                    text = old_name
+                }
+                else {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        val response =
+                            (async { HttpRequest.editGroup(gid, text) }).await()
+
+                        if (response.status != 1) {
+                            println("There was an error editing that item: " + response.error)
+                        } else {
+                            name = text
+                            Model.editGroup(old_name, name)
+                            if (NoteView.display_groups.contains(old_name)) {
+                                NoteView.display_groups.remove(old_name)
+                                NoteView.display_groups.add(name)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     val delete = Button("X").apply {
         setOnAction {
@@ -454,6 +473,7 @@ object NoteView: VBox() {
     var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
+            val removeList = mutableListOf<String>()
             display_groups.add(gname)
             children.clear()
             println(display_groups)
@@ -464,8 +484,11 @@ object NoteView: VBox() {
                     }
                 }
                 else {
-                    display_groups.remove(it)
+                    removeList.add(it)
                 }
+            }
+            removeList.forEach {
+                display_groups.remove(it)
             }
         }
             /**
