@@ -62,19 +62,19 @@ object HttpRequest {
         return Json.decodeFromString<List<MutableMap<String, String>>>(response.bodyAsText())
     }
 
-    suspend fun addTask(text: String, priority: Int, gid: Int, due: String): BaseResponse {
+    suspend fun addTask(text: String, priority: Int, gid: Int, due: String, idx : Int): BaseResponse {
         val response: HttpResponse = client.post(APIConstants.API_BASE_URL + APIConstants.ADD_TASK) {
             contentType(ContentType.Application.Json)
-            setBody(Note(text = text, priority = priority, gid = gid, due = due))
+            setBody(Note(text = text, priority = priority, gid = gid, due = due, idx = idx))
         }
         val body = Json.decodeFromString<List<BaseResponse>>(response.bodyAsText())
         return body[0]
     }
 
-    suspend fun editTask(id: String, text: String, priority: Int, gid: Int, due: String): BaseResponse {
-        val response: HttpResponse = client.put(APIConstants.API_BASE_URL + APIConstants.EDIT_TASK) {
+    suspend fun editTask(id: Int, text: String, priority: Int, gid: Int, due: String, idx: Int): BaseResponse {
+        val response: HttpResponse = client.post(APIConstants.API_BASE_URL + APIConstants.EDIT_TASK) {
             contentType(ContentType.Application.Json)
-            setBody(Note(id = id.toInt(), text = text, priority = priority, gid = gid, due = due))
+            setBody(Note(id = id, text = text, priority = priority, gid = gid, due = due, idx = idx))
         }
         val body = Json.decodeFromString<List<BaseResponse>>(response.bodyAsText())
         return body[0]

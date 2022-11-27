@@ -210,8 +210,12 @@ class toolBar(){
                     priority = 2
                 }
                 println(due_date.value.format(formatter))
+                var index = 0
+                if(Model.gidMappings.containsKey(group_text)){
+                    index =  Model.gidMappings[group_text]!!.notes.size
+                }
                 val response =
-                    (async { HttpRequest.addTask(text_note.getText(), priority, gid, due_date.value.format(formatter)) }).await()
+                    (async { HttpRequest.addTask(text_note.getText(), priority, gid, due_date.value.format(formatter), index) }).await()
 
 
                 if (response.status != 1) {
@@ -226,10 +230,10 @@ class toolBar(){
                     val last_edit = month + "/" + day + "/" + year
                     println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
-                        group_text = "Ungrouped Notes"
+                        group_text = "Ungrouped"
                         println("Adding to no group because group you entered doesn't exist")
                     }
-                    Model.addNote(group_text, gid, note_id, text_note.getText(), priority, last_edit, due_date.value.format(formatter))
+                    Model.addNote(group_text, gid, note_id, text_note.getText(), priority, last_edit, due_date.value.format(formatter), index)
                 }
 
                 text_note.text = "New note"
@@ -278,6 +282,113 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         delete_button.setOnAction() {
             deleteNote()
         }
+
+        edit.setOnAction(){
+            openModal()
+        }
+    }
+
+
+    fun openModal() = runBlocking<Unit>{
+        var note_idx = 0
+
+        for (i in 0..Model.gidMappings[gname]!!.notes.size-1){
+            if(Model.gidMappings[gname]!!.notes[i].id == note_id){
+                note_idx = i
+                break
+            }
+        }
+
+        var note = Model.gidMappings[gname]!!.notes[note_idx]
+
+        val dialog = Stage();
+        dialog.title = "Edit note!"
+        dialog.initModality(Modality.APPLICATION_MODAL);
+
+        val text_note = TextField(note.text)
+        val text_group = TextField(gname)
+
+        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        var date = LocalDate.parse(note.due, formatter)
+        val due_date = DatePicker(date)
+
+
+        val low_prio = CheckBox("Low")
+        val med_prio = CheckBox("Med")
+        val high_prio = CheckBox("High")
+        if(note.priority == 1){
+            low_prio.setSelected(true)
+        }else if(note.priority == 2){
+            med_prio.setSelected(true)
+        }else{
+            high_prio.setSelected(true)
+        }
+
+        low_prio.setOnAction{
+            high_prio.setSelected(false)
+            med_prio.setSelected(false)
+        }
+        med_prio.setOnAction{
+            low_prio.setSelected(false)
+            high_prio.setSelected(false)
+        }
+        high_prio.setOnAction{
+            low_prio.setSelected(false)
+            med_prio.setSelected(false)
+        }
+
+        val priority_box = HBox(low_prio, med_prio, high_prio).apply{
+            spacing = 5.0
+        }
+        val edit_note = Button("Edit Note")
+        edit_note.setOnAction(){
+            GlobalScope.launch(Dispatchers.IO) {
+                var gid = -1
+                var group_text = text_group.getText()
+                if (Model.gidMappings.containsKey(group_text)) {
+                    val id = Model.gidMappings[group_text]!!.id
+                    gid = id
+                }
+                var priority = 1
+                if (low_prio.isSelected) {
+                    priority = 3
+                } else if (med_prio.isSelected) {
+                    priority = 2
+                }
+
+                val response =
+                    (async { HttpRequest.editTask(note.id, text_note.getText(), priority, gid, due_date.value.format(formatter), note.idx) }).await()
+
+                if (response.status != 1) {
+                    println("There was an error editing that item: " + response.error)
+                } else {
+                    println("Item edited!\n")
+                    var note_id = response.message.toIntOrNull() ?: -1
+                    val c = Calendar.getInstance()
+                    val year = c.get(Calendar.YEAR).toString()
+                    val month = c.get(Calendar.MONTH).toString()
+                    val day = c.get(Calendar.DAY_OF_MONTH).toString()
+                    val last_edit = month + "/" + day + "/" + year
+                    println(last_edit)
+                    if (!Model.gidMappings.containsKey(group_text)) {
+                        group_text = "Ungrouped"
+                        println("Adding to no group because group you entered doesn't exist")
+                    }
+
+                    Model.editNote(group_text, note.gid, gid, note.id, note_id, text_note.getText(), priority, last_edit, due_date.value.format(formatter), note.idx)
+                }
+
+            }
+        }
+
+        val dialogVbox = VBox(text_note, text_group, due_date, priority_box, edit_note).apply{
+            spacing = 10.0
+            padding = Insets(10.0)
+        }
+        val dialogScene = Scene(dialogVbox, 300.0, 200.0);
+
+        dialog.setScene(dialogScene);
+        dialog.show();
     }
 
     fun deleteNote() = runBlocking<Unit> {
