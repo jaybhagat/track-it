@@ -19,6 +19,7 @@ import javafx.application.Platform
 import javafx.collections.FXCollections
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
+import todo.app.model.Note
 import todo.console.*
 import java.text.DateFormat
 import java.time.LocalDate
@@ -50,14 +51,42 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
     val text = TextField().apply {
         background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0) ))
         text = name
-        /**
-         * Add edit action
-         */
+//        textProperty().addListener {
+//                _, oldValue, newValue ->
+//            if (!Model.gidMappings.containsKey(newValue)) {
+//                Model.editGroup(oldValue, newValue)
+//            }
+//            else {
+//                text = oldValue
+//            }
+//        }
     }
     val delete = Button("X").apply {
-        /**
-         * Add delete action
-         */
+        setOnAction {
+            GlobalScope.launch(Dispatchers.IO) {
+            checkBox.isSelected = false
+            val deleteNotes = mutableListOf<Note>()
+            Model.gidMappings[name]!!.notes.forEach {
+                deleteNotes.add(it)
+            }
+            deleteNotes.forEach {
+                    val response = (async { HttpRequest.deleteTask(it.id.toString()) }).await()
+
+                    if (!response.status.isSuccess()) {
+                        println("There was an error in deleting the note.")
+                    } else {
+                        Model.deleteNote(name, it.id)
+                    }
+            }
+                    val response = (async { HttpRequest.deleteGroup(gid.toString()) }).await()
+
+                    if (!response.status.isSuccess()) {
+                        println("There was an error in deleting the note.")
+                    } else {
+                        Model.deleteGroup(name)
+                    }
+                }
+            }
     }
 
     val checkBox = CheckBox().apply {
@@ -74,7 +103,9 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
         spacing = 10.0
         children.add(checkBox)
         children.add(text)
-        children.add(delete)
+        if (name != "Ungrouped") {
+            children.add(delete)
+        }
 
         Model.addListener(this)
         invalidated(null)
@@ -425,9 +456,15 @@ object NoteView: VBox() {
         Platform.runLater {
             display_groups.add(gname)
             children.clear()
+            println(display_groups)
             display_groups.forEach {
-                Model.gidMappings[it]!!.notes.forEach {
-                    children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                if (Model.gidMappings.contains(it)) {
+                    Model.gidMappings[it]!!.notes.forEach {
+                        children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                    }
+                }
+                else {
+                    display_groups.remove(it)
                 }
             }
         }
@@ -436,7 +473,9 @@ object NoteView: VBox() {
              */
     }
     fun remove(gname: String) {
-        display_groups.remove(gname)
+        if (display_groups.contains(gname)) {
+            display_groups.remove(gname)
+        }
         children.clear()
         display_groups.forEach {
             Model.gidMappings[it]!!.notes.forEach {

@@ -85,6 +85,18 @@ object Model: Observable {
 
     }
 
+    fun deleteGroup(gname: String) {
+        gidMappings[gname]!!.notes.forEach {
+            deleteNote(gname, it.id)
+        }
+        gidMappings.remove(gname)
+        sideBar.createGroups()
+    }
+
+    fun editGroup(old_gname: String, new_gname: String) {
+
+    }
+
     /**
      * Call this function to broadcast any changes to view/listeners
      */

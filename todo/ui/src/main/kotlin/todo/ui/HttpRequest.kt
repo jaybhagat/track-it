@@ -23,6 +23,7 @@ object APIConstants {
     const val ADD_GROUP = "/api/add/group"
     const val GET_GROUP_TASK = "/api/group/notes"
     const val GET_GROUPS = "/groups"
+    const val DELETE_GROUP = "/api/delete/group"
 }
 
 
@@ -82,6 +83,12 @@ object HttpRequest {
 
     suspend fun deleteTask(id: String): HttpResponse {
         val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_TASK + "/" + id)
+
+        return response
+    }
+
+    suspend fun deleteGroup(gid: String): HttpResponse {
+        val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_GROUP + "/" + gid)
 
         return response
     }
