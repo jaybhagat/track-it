@@ -16,6 +16,7 @@ import javafx.stage.Stage
 import javafx.stage.Modality;
 import io.ktor.http.*
 import javafx.application.Platform
+import javafx.collections.FXCollections
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
 import todo.console.*
@@ -170,7 +171,13 @@ class toolBar(){
         //dialog.initOwner(primaryStage);
 
         val text_note = TextField("New note")
-        val text_group = TextField("Add to existing group")
+        val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
+        Model.gidMappings.forEach {
+            if (it.key != "Ungrouped") {
+                text_group.items.add(it.key)
+            }
+        }
+        text_group.promptText = "Pick Group"
         val due_date = DatePicker()
         val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
 
@@ -198,7 +205,8 @@ class toolBar(){
         create_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                var group_text = text_group.getText()
+//                var group_text = text_group.getText()
+                var group_text = text_group.value
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
@@ -237,7 +245,6 @@ class toolBar(){
                 }
 
                 text_note.text = "New note"
-                text_group.text = "Add to existing group"
                 high_prio.setSelected(false)
                 med_prio.setSelected(false)
                 low_prio.setSelected(false)
@@ -306,7 +313,14 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         dialog.initModality(Modality.APPLICATION_MODAL);
 
         val text_note = TextField(note.text)
-        val text_group = TextField(gname)
+//        val text_group = TextField(gname)
+        val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
+        Model.gidMappings.forEach {
+            if (it.key != "Ungrouped") {
+                text_group.items.add(it.key)
+            }
+        }
+        text_group.promptText = "Pick Group"
 
         val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
         var date = LocalDate.parse(note.due, formatter)
@@ -344,7 +358,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         edit_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                var group_text = text_group.getText()
+                var group_text = text_group.value
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
