@@ -65,7 +65,7 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
                 NoteView.show(name)
             }
             else {
-                NoteView.children.clear()
+                NoteView.remove(name)
             }
         }
     }
@@ -406,11 +406,26 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
 
 object NoteView: VBox() {
+    var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
-            println("switched")
+            display_groups.add(gname)
             children.clear()
-            Model.gidMappings[gname]!!.notes.forEach {
+            display_groups.forEach {
+                Model.gidMappings[it]!!.notes.forEach {
+                    children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                }
+            }
+        }
+            /**
+             * For sorting, we can simply sort the children's list by index
+             */
+    }
+    fun remove(gname: String) {
+        display_groups.remove(gname)
+        children.clear()
+        display_groups.forEach {
+            Model.gidMappings[it]!!.notes.forEach {
                 children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
             }
         }
