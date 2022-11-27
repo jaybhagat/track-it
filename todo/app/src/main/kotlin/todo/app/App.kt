@@ -289,7 +289,7 @@ class TaskController() {
     }
 
 
-    @PutMapping("/api/edit/task")
+    @PostMapping("/api/edit/task")
     fun editTask(@RequestBody getNoteDetails: Note): String {
         val res = BaseResponse()
 
@@ -308,7 +308,7 @@ class TaskController() {
                 val query = con.createStatement()
                 query.executeUpdate(sql)
                 res.status = 1
-                res.message = "Note edited ${getNoteDetails.id}"
+                res.message = "${getNoteDetails.id}"
                 return Json.encodeToString(listOf(res))
             }
         } catch (ex: SQLException) {
