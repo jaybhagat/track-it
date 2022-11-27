@@ -167,18 +167,23 @@ object sideBar {
         groups_box.children.add(label_grp)
         groups_box.children.add(create_group)
         create_btn.setOnAction(){
-            GlobalScope.launch(Dispatchers.IO) {
-                val response =
-                    (async { HttpRequest.addGroup(grp_text.getText())}).await()
-
-                if (response.status != 1) {
-                    println("There was an error editing that group: " + response.error)
-                } else {
-                    println("Group added!\n")
-                    var gid = response.message.toIntOrNull() ?: -1
-                    Model.addGroup(grp_text.getText(), gid)
-                }
+            if (Model.gidMappings.contains(grp_text.text)) {
                 grp_text.text = "Group name"
+            }
+            else {
+                GlobalScope.launch(Dispatchers.IO) {
+                    val response =
+                        (async { HttpRequest.addGroup(grp_text.getText()) }).await()
+
+                    if (response.status != 1) {
+                        println("There was an error editing that group: " + response.error)
+                    } else {
+                        println("Group added!\n")
+                        var gid = response.message.toIntOrNull() ?: -1
+                        Model.addGroup(grp_text.getText(), gid)
+                    }
+                    grp_text.text = "Group name"
+                }
             }
         }
     }
