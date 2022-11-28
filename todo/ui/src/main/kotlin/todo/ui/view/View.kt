@@ -554,16 +554,18 @@ object NoteView: VBox() {
     init {
         isFillWidth = true
     }
+
     var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
             display_groups.add(gname)
             display()
         }
-            /**
-             * For sorting, we can simply sort the children's list by index
-             */
+        /**
+         * For sorting, we can simply sort the children's list by index
+         */
     }
+
     fun remove(gname: String) {
         if (display_groups.contains(gname)) {
             display_groups.remove(gname)
@@ -572,27 +574,28 @@ object NoteView: VBox() {
     }
 
     fun display() {
-        val removeList = mutableListOf<String>()
-        children.clear()
-        display_groups.forEach {
-            val name = it
-            children.add(Label(name).apply {
-                font = Font.font(15.0)
-                alignment = Pos.TOP_CENTER
-                maxWidth = Double.MAX_VALUE
-                background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0),Insets(0.0) ))
-            })
-            if (Model.gidMappings.contains(it)) {
-                Model.gidMappings[it]!!.notes.forEach {
-                    children.add(NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+        Platform.runLater {
+            val removeList = mutableListOf<String>()
+            children.clear()
+            display_groups.forEach {
+                val name = it
+                if (Model.gidMappings.contains(it)) {
+                    children.add(Label(name).apply {
+                        font = Font.font(15.0)
+                        alignment = Pos.TOP_CENTER
+                        maxWidth = Double.MAX_VALUE
+                        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+                    })
+                    Model.gidMappings[it]!!.notes.forEach {
+                        children.add(NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                    }
+                } else {
+                    removeList.add(it)
                 }
             }
-            else {
-                removeList.add(it)
+            removeList.forEach {
+                display_groups.remove(it)
             }
-        }
-        removeList.forEach {
-            display_groups.remove(it)
         }
     }
 }
