@@ -17,6 +17,7 @@ import javafx.stage.Modality;
 import io.ktor.http.*
 import javafx.application.Platform
 import javafx.collections.FXCollections
+import javafx.scene.Node
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
 import todo.app.model.Note
@@ -36,7 +37,9 @@ class View: BorderPane(), InvalidationListener {
         left = side_bar.left
         bottom = tool_bar.bottom_box
         minWidth = 400.0
-        center = NoteView
+        center = ScrollPane(NoteView).apply {
+            isFitToWidth = true
+        }
     }
 
     /**
@@ -103,6 +106,7 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                         println("There was an error in deleting the note.")
                     } else {
                         Model.deleteGroup(name)
+                        sideBar.deleteGroup(this@GroupBox)
                     }
                 }
             }
@@ -128,11 +132,6 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
 
         Model.addListener(this)
         invalidated(null)
-
-        if (name == "Ungrouped") {
-            checkBox.isSelected = true
-            NoteView.show(name)
-        }
     }
 
     override fun invalidated(observable: Observable?) {
@@ -188,14 +187,30 @@ object sideBar {
         }
     }
 
-    fun createGroups() {
+    fun createGroups(initial: Boolean = false) {
         Platform.runLater {
             groups_box.children.clear()
             groups_box.children.add(label_grp)
             groups_box.children.add(create_group)
             Model.gidMappings.forEach {
-                groups_box.children.add(GroupBox(it.value.id, it.key))
+                val newGroup = GroupBox(it.value.id, it.key)
+                if (initial && it.key == "Ungrouped") {
+                    newGroup.checkBox.isSelected = true
+                    NoteView.show("Ungrouped")
+                }
+                groups_box.children.add(newGroup)
             }
+        }
+    }
+    fun addGroup(gid: Int, gname: String) {
+        Platform.runLater {
+            groups_box.children.add(GroupBox(gid, gname))
+        }
+    }
+
+    fun deleteGroup(node: Node) {
+        Platform.runLater {
+            groups_box.children.remove(node)
         }
     }
 
@@ -271,7 +286,6 @@ class toolBar(){
                 } else if (med_prio.isSelected) {
                     priority = 2
                 }
-                println(due_date.value.format(formatter))
                 var index = 0
                 if(Model.gidMappings.containsKey(group_text)){
                     index =  Model.gidMappings[group_text]!!.notes.size
@@ -290,7 +304,6 @@ class toolBar(){
                     val month = c.get(Calendar.MONTH).toString()
                     val day = c.get(Calendar.DAY_OF_MONTH).toString()
                     val last_edit = month + "/" + day + "/" + year
-                    println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
                         group_text = "Ungrouped"
                         println("Adding to no group because group you entered doesn't exist")
@@ -412,7 +425,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         val note_idx = getNoteIdx(gname, note_id)
 
         var note = Model.gidMappings[gname]!!.notes[note_idx]
-        println(note_idx-1)
         if(0 <= note_idx - 1){
             moveNote(note_idx - 1, note_idx)
         }
@@ -429,7 +441,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         dialog.initModality(Modality.APPLICATION_MODAL);
 
         val text_note = TextField(note.text)
-//        val text_group = TextField(gname)
         val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
         Model.gidMappings.forEach {
             if (it.key != "Ungrouped") {
@@ -499,7 +510,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
                     val month = c.get(Calendar.MONTH).toString()
                     val day = c.get(Calendar.DAY_OF_MONTH).toString()
                     val last_edit = month + "/" + day + "/" + year
-                    println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
                         group_text = "Ungrouped"
                         println("Adding to no group because group you entered doesn't exist")
@@ -536,26 +546,15 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
 
 object NoteView: VBox() {
+
+    init {
+        isFillWidth = true
+    }
     var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
-            val removeList = mutableListOf<String>()
             display_groups.add(gname)
-            children.clear()
-            println(display_groups)
-            display_groups.forEach {
-                if (Model.gidMappings.contains(it)) {
-                    Model.gidMappings[it]!!.notes.forEach {
-                        children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
-                    }
-                }
-                else {
-                    removeList.add(it)
-                }
-            }
-            removeList.forEach {
-                display_groups.remove(it)
-            }
+            display()
         }
             /**
              * For sorting, we can simply sort the children's list by index
@@ -565,11 +564,31 @@ object NoteView: VBox() {
         if (display_groups.contains(gname)) {
             display_groups.remove(gname)
         }
+        display()
+    }
+
+    fun display() {
+        val removeList = mutableListOf<String>()
         children.clear()
         display_groups.forEach {
-            Model.gidMappings[it]!!.notes.forEach {
-                children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+            val name = it
+            children.add(Label(name).apply {
+                font = Font.font(15.0)
+                alignment = Pos.TOP_CENTER
+                maxWidth = Double.MAX_VALUE
+                background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0),Insets(0.0) ))
+            })
+            if (Model.gidMappings.contains(it)) {
+                Model.gidMappings[it]!!.notes.forEach {
+                    children.add(NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                }
             }
+            else {
+                removeList.add(it)
+            }
+        }
+        removeList.forEach {
+            display_groups.remove(it)
         }
     }
 }
