@@ -23,8 +23,9 @@ object APIConstants {
     const val ADD_GROUP = "/api/add/group"
     const val GET_GROUP_TASK = "/api/group/notes"
     const val GET_GROUPS = "/groups"
+    const val DELETE_GROUP = "/api/delete/group"
+    const val EDIT_GROUP = "/api/edit/group"
 }
-
 
 
 object HttpRequest {
@@ -80,8 +81,23 @@ object HttpRequest {
         return body[0]
     }
 
+    suspend fun editGroup(gid: Int, text: String): BaseResponse {
+        val response: HttpResponse = client.put(APIConstants.API_BASE_URL + APIConstants.EDIT_GROUP) {
+            contentType(ContentType.Application.Json)
+            setBody(Group(group_id = gid, group_name = text))
+        }
+        val body = Json.decodeFromString<List<BaseResponse>>(response.bodyAsText())
+        return body[0]
+    }
+
     suspend fun deleteTask(id: String): HttpResponse {
         val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_TASK + "/" + id)
+
+        return response
+    }
+
+    suspend fun deleteGroup(gid: String): HttpResponse {
+        val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_GROUP + "/" + gid)
 
         return response
     }

@@ -16,8 +16,10 @@ import javafx.stage.Stage
 import javafx.stage.Modality;
 import io.ktor.http.*
 import javafx.application.Platform
+import javafx.collections.FXCollections
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
+import todo.app.model.Note
 import todo.console.*
 import java.text.DateFormat
 import java.time.LocalDate
@@ -45,18 +47,65 @@ class View: BorderPane(), InvalidationListener {
     }
 }
 
-class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
+class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
+    var old_name: String = ""
     val text = TextField().apply {
         background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0) ))
         text = name
-        /**
-         * Add edit action
-         */
+        focusedProperty().addListener { observable, oldValue, newValue ->
+            if (newValue) {
+                old_name = text
+            }
+            if (!newValue) {
+                if (Model.gidMappings.containsKey(text)) {
+                    text = old_name
+                }
+                else {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        val response =
+                            (async { HttpRequest.editGroup(gid, text) }).await()
+
+                        if (response.status != 1) {
+                            println("There was an error editing that item: " + response.error)
+                        } else {
+                            name = text
+                            Model.editGroup(old_name, name)
+                            if (NoteView.display_groups.contains(old_name)) {
+                                NoteView.display_groups.remove(old_name)
+                                NoteView.display_groups.add(name)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     val delete = Button("X").apply {
-        /**
-         * Add delete action
-         */
+        setOnAction {
+            GlobalScope.launch(Dispatchers.IO) {
+            checkBox.isSelected = false
+            val deleteNotes = mutableListOf<Note>()
+            Model.gidMappings[name]!!.notes.forEach {
+                deleteNotes.add(it)
+            }
+            deleteNotes.forEach {
+                    val response = (async { HttpRequest.deleteTask(it.id.toString()) }).await()
+
+                    if (!response.status.isSuccess()) {
+                        println("There was an error in deleting the note.")
+                    } else {
+                        Model.deleteNote(name, it.id)
+                    }
+            }
+                    val response = (async { HttpRequest.deleteGroup(gid.toString()) }).await()
+
+                    if (!response.status.isSuccess()) {
+                        println("There was an error in deleting the note.")
+                    } else {
+                        Model.deleteGroup(name)
+                    }
+                }
+            }
     }
 
     val checkBox = CheckBox().apply {
@@ -65,7 +114,7 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
                 NoteView.show(name)
             }
             else {
-                NoteView.children.clear()
+                NoteView.remove(name)
             }
         }
     }
@@ -73,7 +122,9 @@ class GroupBox(val gid: Int, val name: String): HBox(), InvalidationListener {
         spacing = 10.0
         children.add(checkBox)
         children.add(text)
-        children.add(delete)
+        if (name != "Ungrouped") {
+            children.add(delete)
+        }
 
         Model.addListener(this)
         invalidated(null)
@@ -116,18 +167,23 @@ object sideBar {
         groups_box.children.add(label_grp)
         groups_box.children.add(create_group)
         create_btn.setOnAction(){
-            GlobalScope.launch(Dispatchers.IO) {
-                val response =
-                    (async { HttpRequest.addGroup(grp_text.getText())}).await()
-
-                if (response.status != 1) {
-                    println("There was an error editing that group: " + response.error)
-                } else {
-                    println("Group added!\n")
-                    var gid = response.message.toIntOrNull() ?: -1
-                    Model.addGroup(grp_text.getText(), gid)
-                }
+            if (Model.gidMappings.contains(grp_text.text)) {
                 grp_text.text = "Group name"
+            }
+            else {
+                GlobalScope.launch(Dispatchers.IO) {
+                    val response =
+                        (async { HttpRequest.addGroup(grp_text.getText()) }).await()
+
+                    if (response.status != 1) {
+                        println("There was an error editing that group: " + response.error)
+                    } else {
+                        println("Group added!\n")
+                        var gid = response.message.toIntOrNull() ?: -1
+                        Model.addGroup(grp_text.getText(), gid)
+                    }
+                    grp_text.text = "Group name"
+                }
             }
         }
     }
@@ -170,7 +226,13 @@ class toolBar(){
         //dialog.initOwner(primaryStage);
 
         val text_note = TextField("New note")
-        val text_group = TextField("Add to existing group")
+        val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
+        Model.gidMappings.forEach {
+            if (it.key != "Ungrouped") {
+                text_group.items.add(it.key)
+            }
+        }
+        text_group.promptText = "Pick Group"
         val due_date = DatePicker()
         val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
 
@@ -198,7 +260,7 @@ class toolBar(){
         create_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                var group_text = text_group.getText()
+                var group_text = text_group.value
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
@@ -237,7 +299,6 @@ class toolBar(){
                 }
 
                 text_note.text = "New note"
-                text_group.text = "Add to existing group"
                 high_prio.setSelected(false)
                 med_prio.setSelected(false)
                 low_prio.setSelected(false)
@@ -306,7 +367,14 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         dialog.initModality(Modality.APPLICATION_MODAL);
 
         val text_note = TextField(note.text)
-        val text_group = TextField(gname)
+//        val text_group = TextField(gname)
+        val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
+        Model.gidMappings.forEach {
+            if (it.key != "Ungrouped") {
+                text_group.items.add(it.key)
+            }
+        }
+        text_group.promptText = "Pick Group"
 
         val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
         var date = LocalDate.parse(note.due, formatter)
@@ -344,7 +412,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         edit_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                var group_text = text_group.getText()
+                var group_text = text_group.value
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
@@ -406,11 +474,38 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
 
 object NoteView: VBox() {
+    var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
-            println("switched")
+            val removeList = mutableListOf<String>()
+            display_groups.add(gname)
             children.clear()
-            Model.gidMappings[gname]!!.notes.forEach {
+            println(display_groups)
+            display_groups.forEach {
+                if (Model.gidMappings.contains(it)) {
+                    Model.gidMappings[it]!!.notes.forEach {
+                        children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                    }
+                }
+                else {
+                    removeList.add(it)
+                }
+            }
+            removeList.forEach {
+                display_groups.remove(it)
+            }
+        }
+            /**
+             * For sorting, we can simply sort the children's list by index
+             */
+    }
+    fun remove(gname: String) {
+        if (display_groups.contains(gname)) {
+            display_groups.remove(gname)
+        }
+        children.clear()
+        display_groups.forEach {
+            Model.gidMappings[it]!!.notes.forEach {
                 children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
             }
         }
