@@ -5,6 +5,7 @@ import javafx.beans.Observable
 import todo.app.view.sideBar
 import io.ktor.http.*
 import kotlinx.coroutines.*
+import todo.app.view.NoteView
 import todo.console.*
 import java.util.function.Predicate
 
@@ -95,6 +96,7 @@ object Model: Observable {
             deleteNote(gname, it.id)
         }
         gidMappings.remove(gname)
+        NoteView.remove(gname)
     }
 
     fun editGroup(old_gname: String, new_gname: String) {
