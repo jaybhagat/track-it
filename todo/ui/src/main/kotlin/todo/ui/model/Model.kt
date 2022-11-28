@@ -39,8 +39,8 @@ object Model: Observable {
         new_note.last_edit = last_edit
         new_note.due = due
         new_note.idx = idx
-        println(gname)
         gidMappings[gname]!!.notes.add(new_note)
+        println(new_note.idx)
         broadcast()
     }
 
@@ -82,7 +82,17 @@ object Model: Observable {
             broadcast()
         }
 
+    }
 
+
+    fun swapNoteIndex(gname: String, note_id: Int, note_id2: Int, idx: Int, idx2: Int){
+        gidMappings[gname]!!.notes[idx2].idx = idx
+        gidMappings[gname]!!.notes[idx].idx = idx2
+        val temp_note = gidMappings[gname]!!.notes[idx]
+        gidMappings[gname]!!.notes[idx] =  gidMappings[gname]!!.notes[idx2]
+        gidMappings[gname]!!.notes[idx2] = temp_note
+
+        broadcast()
     }
 
     fun deleteGroup(gname: String) {
@@ -125,23 +135,27 @@ object Model: Observable {
         GlobalScope.launch(Dispatchers.IO) {
             val groups = (async { HttpRequest.getGroups() }).await()
             groups.forEachIndexed { i, item ->
-                println(item.get("group_name").orEmpty())
+                println(item.get("group_id"))
                 var new_group = Group(item.get("group_id")!!.toInt())
                 new_group.name = item.get("group_name").orEmpty()
                 gidMappings.put(item.get("group_name").orEmpty(), new_group)
                 gidtogname.put(item.get("group_id")!!.toInt(), item.get("group_name").orEmpty())
             }
             for((gname, grp) in gidMappings){
+                println(gname)
                 val notes = (async { HttpRequest.getTasksFromGroup(grp.id) }).await()
+                notes.forEachIndexed { i, item ->
+                    gidMappings[gname]!!.notes.add(Note(-1,-2))
+                }
+
                 notes.forEachIndexed { i, item ->
                     var new_note = Note(item.get("id")!!.toInt(), grp.id)
                     new_note.text = item.get("text").orEmpty()
-                    println("inital notes")
-                    println(new_note.text)
                     new_note.priority = item.get("priority")!!.toInt()
                     new_note.last_edit = item.getOrDefault("last_edit", "No last edit")
                     new_note.due = item.getOrDefault("due", "no due date")
-                    gidMappings[gname]!!.notes.add(new_note)
+                    new_note.idx = item.get("idx")!!.toInt()
+                    gidMappings[gname]!!.notes[new_note.idx] = new_note
                 }
             }
             sideBar.createGroups()

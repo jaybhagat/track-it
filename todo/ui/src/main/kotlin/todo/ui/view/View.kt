@@ -347,10 +347,18 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         edit.setOnAction(){
             openModal()
         }
+
+        reorder_up.setOnAction(){
+            moveUp()
+        }
+
+        reorder_down.setOnAction(){
+            moveDown()
+        }
     }
 
 
-    fun openModal() = runBlocking<Unit>{
+    fun getNoteIdx(gname: String, note_id: Int): Int{
         var note_idx = 0
 
         for (i in 0..Model.gidMappings[gname]!!.notes.size-1){
@@ -360,6 +368,60 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
             }
         }
 
+        return note_idx
+    }
+
+
+    fun moveNote(newIdx: Int, prevIdx: Int){
+        var note_need_swapping = Model.gidMappings[gname]!!.notes[newIdx]
+        var note = Model.gidMappings[gname]!!.notes[prevIdx]
+
+        GlobalScope.launch(Dispatchers.IO) {
+            val response =
+                (async { HttpRequest.editTask(note.id, note.text, note.priority, note.gid, note.due, newIdx) }).await()
+
+            val response_note_swap =
+                (async { HttpRequest.editTask(note_need_swapping.id, note_need_swapping.text, note_need_swapping.priority, note_need_swapping.gid, note_need_swapping.due, prevIdx) }).await()
+
+            if (response.status != 1 && response_note_swap.status != -1) {
+                println("There was an error editing that item: " + response.error)
+            } else {
+                println("Item edited!\n")
+                var note_id = response.message.toIntOrNull() ?: -1
+                var other_note_id = response_note_swap.message.toIntOrNull() ?: -1
+
+                Model.swapNoteIndex(gname, note_id, other_note_id, newIdx, prevIdx)
+            }
+        }
+    }
+
+
+    fun moveDown(){
+
+       val note_idx = getNoteIdx(gname, note_id)
+
+        if(Model.gidMappings[gname]!!.notes.size-1 >= note_idx + 1){
+            moveNote(note_idx + 1, note_idx)
+        }
+
+    }
+
+
+    fun moveUp(){
+
+        val note_idx = getNoteIdx(gname, note_id)
+
+        var note = Model.gidMappings[gname]!!.notes[note_idx]
+        println(note_idx-1)
+        if(0 <= note_idx - 1){
+            moveNote(note_idx - 1, note_idx)
+        }
+    }
+
+
+    fun openModal() = runBlocking<Unit>{
+
+        var note_idx = getNoteIdx(gname, note_id)
         var note = Model.gidMappings[gname]!!.notes[note_idx]
 
         val dialog = Stage();
