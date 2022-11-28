@@ -90,7 +90,7 @@ object HttpRequest {
         return body[0]
     }
 
-    suspend fun deleteTask(id: String): HttpResponse {
+    suspend fun deleteTask(id: Int): HttpResponse {
         val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_TASK + "/" + id)
 
         return response
