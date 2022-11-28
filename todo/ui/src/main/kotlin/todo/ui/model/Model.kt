@@ -29,7 +29,7 @@ object Model: Observable {
         var new_group = Group(gid)
         gidMappings.put(group_name, new_group)
         gidtogname.put(gid, group_name)
-        sideBar.createGroups()
+        sideBar.addGroup(gid, group_name)
     }
 
     fun addNote(gname: String, gid: Int, note_id: Int, text: String, priority: Int, last_edit: String, due: String, idx: Int){
@@ -100,7 +100,6 @@ object Model: Observable {
             deleteNote(gname, it.id)
         }
         gidMappings.remove(gname)
-        sideBar.createGroups()
     }
 
     fun editGroup(old_gname: String, new_gname: String) {
@@ -158,8 +157,7 @@ object Model: Observable {
                     gidMappings[gname]!!.notes[new_note.idx] = new_note
                 }
             }
-            sideBar.createGroups()
-
+            sideBar.createGroups(initial = true)
             broadcast()
         }
 

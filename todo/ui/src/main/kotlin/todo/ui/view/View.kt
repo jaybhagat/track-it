@@ -17,6 +17,7 @@ import javafx.stage.Modality;
 import io.ktor.http.*
 import javafx.application.Platform
 import javafx.collections.FXCollections
+import javafx.scene.Node
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
 import todo.app.model.Note
@@ -36,7 +37,7 @@ class View: BorderPane(), InvalidationListener {
         left = side_bar.left
         bottom = tool_bar.bottom_box
         minWidth = 400.0
-        center = NoteView
+        center = ScrollPane(NoteView)
     }
 
     /**
@@ -103,6 +104,7 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                         println("There was an error in deleting the note.")
                     } else {
                         Model.deleteGroup(name)
+                        sideBar.deleteGroup(this@GroupBox)
                     }
                 }
             }
@@ -128,15 +130,11 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
 
         Model.addListener(this)
         invalidated(null)
-
-        if (name == "Ungrouped") {
-            checkBox.isSelected = true
-            NoteView.show(name)
-        }
     }
 
     override fun invalidated(observable: Observable?) {
         if (checkBox.isSelected) {
+            println(name)
             NoteView.show(name)
         }
     }
@@ -188,14 +186,30 @@ object sideBar {
         }
     }
 
-    fun createGroups() {
+    fun createGroups(initial: Boolean = false) {
         Platform.runLater {
             groups_box.children.clear()
             groups_box.children.add(label_grp)
             groups_box.children.add(create_group)
             Model.gidMappings.forEach {
-                groups_box.children.add(GroupBox(it.value.id, it.key))
+                val newGroup = GroupBox(it.value.id, it.key)
+                if (initial && it.key == "Ungrouped") {
+                    newGroup.checkBox.isSelected = true
+                    NoteView.show("Ungrouped")
+                }
+                groups_box.children.add(newGroup)
             }
+        }
+    }
+    fun addGroup(gid: Int, gname: String) {
+        Platform.runLater {
+            groups_box.children.add(GroupBox(gid, gname))
+        }
+    }
+
+    fun deleteGroup(node: Node) {
+        Platform.runLater {
+            groups_box.children.remove(node)
         }
     }
 
@@ -565,11 +579,21 @@ object NoteView: VBox() {
         if (display_groups.contains(gname)) {
             display_groups.remove(gname)
         }
+        val removeList = mutableListOf<String>()
         children.clear()
+        println(display_groups)
         display_groups.forEach {
-            Model.gidMappings[it]!!.notes.forEach {
-                children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+            if (Model.gidMappings.contains(it)) {
+                Model.gidMappings[it]!!.notes.forEach {
+                    children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                }
             }
+            else {
+                removeList.add(it)
+            }
+        }
+        removeList.forEach {
+            display_groups.remove(it)
         }
     }
 }
