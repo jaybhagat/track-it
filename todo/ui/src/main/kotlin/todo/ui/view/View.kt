@@ -37,7 +37,9 @@ class View: BorderPane(), InvalidationListener {
         left = side_bar.left
         bottom = tool_bar.bottom_box
         minWidth = 400.0
-        center = ScrollPane(NoteView)
+        center = ScrollPane(NoteView).apply {
+            isFitToWidth = true
+        }
     }
 
     /**
@@ -443,7 +445,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         dialog.initModality(Modality.APPLICATION_MODAL);
 
         val text_note = TextField(note.text)
-//        val text_group = TextField(gname)
         val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
         Model.gidMappings.forEach {
             if (it.key != "Ungrouped") {
@@ -550,26 +551,15 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
 
 object NoteView: VBox() {
+
+    init {
+        isFillWidth = true
+    }
     var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
-            val removeList = mutableListOf<String>()
             display_groups.add(gname)
-            children.clear()
-            println(display_groups)
-            display_groups.forEach {
-                if (Model.gidMappings.contains(it)) {
-                    Model.gidMappings[it]!!.notes.forEach {
-                        children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
-                    }
-                }
-                else {
-                    removeList.add(it)
-                }
-            }
-            removeList.forEach {
-                display_groups.remove(it)
-            }
+            display()
         }
             /**
              * For sorting, we can simply sort the children's list by index
@@ -579,13 +569,24 @@ object NoteView: VBox() {
         if (display_groups.contains(gname)) {
             display_groups.remove(gname)
         }
+        display()
+    }
+
+    fun display() {
         val removeList = mutableListOf<String>()
         children.clear()
         println(display_groups)
         display_groups.forEach {
+            val name = it
+            children.add(Label(name).apply {
+                font = Font.font(15.0)
+                alignment = Pos.TOP_CENTER
+                prefWidth = this@NoteView.width
+                background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0),Insets(0.0) ))
+            })
             if (Model.gidMappings.contains(it)) {
                 Model.gidMappings[it]!!.notes.forEach {
-                    children.add(NoteBox(gname, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                    children.add(NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
                 }
             }
             else {
