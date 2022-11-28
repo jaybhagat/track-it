@@ -260,7 +260,6 @@ class toolBar(){
         create_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-//                var group_text = text_group.getText()
                 var group_text = text_group.value
                 if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
