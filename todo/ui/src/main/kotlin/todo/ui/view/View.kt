@@ -136,7 +136,6 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
 
     override fun invalidated(observable: Observable?) {
         if (checkBox.isSelected) {
-            println(name)
             NoteView.show(name)
         }
     }
@@ -287,7 +286,6 @@ class toolBar(){
                 } else if (med_prio.isSelected) {
                     priority = 2
                 }
-                println(due_date.value.format(formatter))
                 var index = 0
                 if(Model.gidMappings.containsKey(group_text)){
                     index =  Model.gidMappings[group_text]!!.notes.size
@@ -306,7 +304,6 @@ class toolBar(){
                     val month = c.get(Calendar.MONTH).toString()
                     val day = c.get(Calendar.DAY_OF_MONTH).toString()
                     val last_edit = month + "/" + day + "/" + year
-                    println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
                         group_text = "Ungrouped"
                         println("Adding to no group because group you entered doesn't exist")
@@ -428,7 +425,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         val note_idx = getNoteIdx(gname, note_id)
 
         var note = Model.gidMappings[gname]!!.notes[note_idx]
-        println(note_idx-1)
         if(0 <= note_idx - 1){
             moveNote(note_idx - 1, note_idx)
         }
@@ -514,7 +510,6 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
                     val month = c.get(Calendar.MONTH).toString()
                     val day = c.get(Calendar.DAY_OF_MONTH).toString()
                     val last_edit = month + "/" + day + "/" + year
-                    println(last_edit)
                     if (!Model.gidMappings.containsKey(group_text)) {
                         group_text = "Ungrouped"
                         println("Adding to no group because group you entered doesn't exist")
@@ -575,13 +570,12 @@ object NoteView: VBox() {
     fun display() {
         val removeList = mutableListOf<String>()
         children.clear()
-        println(display_groups)
         display_groups.forEach {
             val name = it
             children.add(Label(name).apply {
                 font = Font.font(15.0)
                 alignment = Pos.TOP_CENTER
-                prefWidth = this@NoteView.width
+                maxWidth = Double.MAX_VALUE
                 background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0),Insets(0.0) ))
             })
             if (Model.gidMappings.contains(it)) {
