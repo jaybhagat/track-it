@@ -92,7 +92,7 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                 deleteNotes.add(it)
             }
             deleteNotes.forEach {
-                    val response = (async { HttpRequest.deleteTask(it.id.toString()) }).await()
+                    val response = (async { HttpRequest.deleteTask(it.id) }).await()
 
                     if (!response.status.isSuccess()) {
                         println("There was an error in deleting the note.")
@@ -497,8 +497,12 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
                     priority = 2
                 }
 
+                if(note.gid != gid){
+                    note_idx = Model.gidMappings[group_text]!!.notes.size
+                }
+
                 val response =
-                    (async { HttpRequest.editTask(note.id, text_note.getText(), priority, gid, due_date.value.format(formatter), note.idx) }).await()
+                    (async { HttpRequest.editTask(note.id, text_note.getText(), priority, gid, due_date.value.format(formatter), note_idx) }).await()
 
                 if (response.status != 1) {
                     println("There was an error editing that item: " + response.error)
@@ -533,7 +537,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
     fun deleteNote() = runBlocking<Unit> {
         GlobalScope.launch(Dispatchers.IO) {
-            val response = (async { HttpRequest.deleteTask(note_id.toString()) }).await()
+            val response = (async { HttpRequest.deleteTask(note_id) }).await()
 
             if ( !response.status.isSuccess()) {
                 println("There was an error in deleting the note.")

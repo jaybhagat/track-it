@@ -49,7 +49,16 @@ object Model: Observable {
         gidMappings[gname]!!.notes.removeIf { x: Note -> check.test(x) }
 
         gidMappings[gname]!!.notes.forEach { x: Note ->
-            if ( x.idx >= deleted!!.idx ) { x.idx-- }
+            if ( x.idx >= deleted!!.idx ) {
+                x.idx--
+                GlobalScope.launch(Dispatchers.IO) {
+                    val response =
+                        (async { HttpRequest.editTask(x.id, x.text, x.priority, x.gid, x.due, x.idx) }).await()
+                    if (response.status != 1) {
+                        println("There was an error editing that item: " + response.error)
+                    }
+                }
+            }
         }
         broadcast()
     }
