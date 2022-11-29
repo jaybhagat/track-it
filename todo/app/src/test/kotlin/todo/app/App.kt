@@ -2,18 +2,13 @@ package todo.app
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeAll
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.MockitoAnnotations
 import org.springframework.boot.test.context.SpringBootTest
 import java.sql.Connection
-import java.sql.Statement
 import java.sql.DriverManager
 import java.sql.SQLException
 import kotlinx.serialization.json.*
 import kotlinx.serialization.*
+import todo.dtos.*
 
 @SpringBootTest
 class ToDoApplicationTests {

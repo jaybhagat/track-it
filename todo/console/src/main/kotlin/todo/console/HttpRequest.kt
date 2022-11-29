@@ -10,7 +10,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import todo.app.*
+import todo.dtos.*
 
 object APIConstants {
     const val API_BASE_URL = "http://localhost:8080"

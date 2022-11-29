@@ -1,13 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id ("org.jetbrains.kotlin.plugin.serialization") version "1.6.10"
+    id ("org.jetbrains.kotlin.plugin.serialization") version "1.7.10"
     id("org.springframework.boot") version "2.7.4"
     id("io.spring.dependency-management") version "1.0.14.RELEASE"
     id("java")
     id ("application")
     id ("org.openjfx.javafxplugin") version "0.0.10"
-    id ("org.beryx.jlink") version "2.24.1"
 
     kotlin("jvm") version "1.7.10"
     kotlin("plugin.spring") version "1.7.10"
@@ -43,11 +42,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("io.ktor:ktor-client-core:2.1.2")
-    implementation("io.ktor:ktor-client-cio:2.1.2")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.controlsfx:controlsfx:11.1.1")
+    implementation(project(":dtos"))
 }
 
 tasks.withType<KotlinCompile> {

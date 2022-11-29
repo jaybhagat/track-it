@@ -1,12 +1,11 @@
-package todo.app.model
+package todo.ui.model
 
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
-import todo.app.view.sideBar
-import io.ktor.http.*
+import todo.ui.view.sideBar
 import kotlinx.coroutines.*
-import todo.app.view.NoteView
-import todo.console.*
+import todo.ui.view.NoteView
+import todo.ui.*
 import java.util.function.Predicate
 
 object Model: Observable {
