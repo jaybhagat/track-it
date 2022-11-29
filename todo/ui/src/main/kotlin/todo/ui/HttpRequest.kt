@@ -1,4 +1,4 @@
-package todo.console
+package todo.ui
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -10,7 +10,7 @@ import io.ktor.http.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import todo.app.*
+import todo.dtos.*
 
 object APIConstants {
     const val API_BASE_URL = "http://localhost:8080"
@@ -96,7 +96,7 @@ object HttpRequest {
         return response
     }
 
-    suspend fun deleteGroup(gid: String): HttpResponse {
+    suspend fun deleteGroup(gid: Int): HttpResponse {
         val response: HttpResponse = client.delete(APIConstants.API_BASE_URL + APIConstants.DELETE_GROUP + "/" + gid)
 
         return response

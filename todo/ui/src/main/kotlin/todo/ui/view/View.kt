@@ -1,11 +1,11 @@
-package todo.app.view
+package todo.ui.view
 
 import javafx.beans.InvalidationListener
 import javafx.beans.Observable
 import javafx.scene.control.ScrollPane
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.VBox
-import todo.app.model.Model
+import todo.ui.model.Model
 import javafx.scene.control.*
 import javafx.geometry.Insets
 import javafx.scene.text.Font
@@ -13,24 +13,23 @@ import javafx.scene.layout.*
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.stage.Stage
-import javafx.stage.Modality;
+import javafx.stage.Modality
 import io.ktor.http.*
 import javafx.application.Platform
+import javafx.beans.binding.Bindings
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.paint.Color
 import kotlinx.coroutines.*
-import todo.app.model.Note
-import todo.console.*
-import java.text.DateFormat
+import todo.ui.model.Note
+import todo.ui.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
-
 class View: BorderPane(), InvalidationListener {
     val side_bar = sideBar
-    val tool_bar = toolBar()
+    val tool_bar = toolBar
     init {
         Model.addListener(this)
         invalidated(null)
@@ -85,31 +84,37 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
     }
     val delete = Button("X").apply {
         setOnAction {
-            GlobalScope.launch(Dispatchers.IO) {
-            checkBox.isSelected = false
-            val deleteNotes = mutableListOf<Note>()
-            Model.gidMappings[name]!!.notes.forEach {
-                deleteNotes.add(it)
-            }
-            deleteNotes.forEach {
-                    val response = (async { HttpRequest.deleteTask(it.id) }).await()
+            deleteGroup()
+        }
+    }
 
+    fun deleteGroup() {
+        GlobalScope.launch(Dispatchers.IO) {
+            checkBox.isSelected = false
+
+            if (name != "Ungrouped") {
+                val deleteNotes = mutableListOf<Note>()
+                Model.gidMappings[name]!!.notes.forEach {
+                    deleteNotes.add(it)
+                }
+                deleteNotes.forEach {
+                    val response = (async { HttpRequest.deleteTask(it.id) }).await()
                     if (!response.status.isSuccess()) {
                         println("There was an error in deleting the note.")
                     } else {
                         Model.deleteNote(name, it.id)
                     }
-            }
-                    val response = (async { HttpRequest.deleteGroup(gid.toString()) }).await()
+                }
+                val response = (async { HttpRequest.deleteGroup(gid) }).await()
 
-                    if (!response.status.isSuccess()) {
-                        println("There was an error in deleting the note.")
-                    } else {
-                        Model.deleteGroup(name)
-                        sideBar.deleteGroup(this@GroupBox)
-                    }
+                if (!response.status.isSuccess()) {
+                    println("There was an error in deleting the note.")
+                } else {
+                    Model.deleteGroup(name)
+                    sideBar.deleteGroup(this@GroupBox)
                 }
             }
+        }
     }
 
     val checkBox = CheckBox().apply {
@@ -159,7 +164,7 @@ object sideBar {
         spacing = 10.0
     }
     val label_grp = Label("Groups").apply {
-        setAlignment(Pos.CENTER);
+        setAlignment(Pos.CENTER)
         font = Font("Arial", 18.0)
     }
     init{
@@ -194,6 +199,14 @@ object sideBar {
             groups_box.children.add(create_group)
             Model.gidMappings.forEach {
                 val newGroup = GroupBox(it.value.id, it.key)
+                newGroup.backgroundProperty().bind(Bindings
+                    .`when`(newGroup.focusedProperty())
+                    .then( Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))) )
+                    .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
+                )
+                newGroup.setOnMouseClicked {
+                    newGroup.requestFocus()
+                }
                 if (initial && it.key == "Ungrouped") {
                     newGroup.checkBox.isSelected = true
                     NoteView.show("Ungrouped")
@@ -204,7 +217,11 @@ object sideBar {
     }
     fun addGroup(gid: Int, gname: String) {
         Platform.runLater {
-            groups_box.children.add(GroupBox(gid, gname))
+            val newGroup = GroupBox(gid, gname)
+            newGroup.setOnMouseClicked {
+                newGroup.requestFocus()
+            }
+            groups_box.children.add(newGroup)
         }
     }
 
@@ -216,8 +233,7 @@ object sideBar {
 
 }
 
-
-class toolBar(){
+object toolBar {
     val add_task = Button("Add task")
     val rightAlign = Pane()
     var bottom_box = HBox()
@@ -235,10 +251,9 @@ class toolBar(){
     }
 
     fun openModal() = runBlocking<Unit>{
-        val dialog = Stage();
+        val dialog = Stage()
         dialog.title = "Create a new note!"
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        //dialog.initOwner(primaryStage);
+        dialog.initModality(Modality.APPLICATION_MODAL)
 
         val text_note = TextField("New note")
         val text_group = ComboBox(FXCollections.observableArrayList("Ungrouped"))
@@ -411,7 +426,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
     fun moveDown(){
 
-       val note_idx = getNoteIdx(gname, note_id)
+        val note_idx = getNoteIdx(gname, note_id)
 
         if(Model.gidMappings[gname]!!.notes.size-1 >= note_idx + 1){
             moveNote(note_idx + 1, note_idx)
@@ -587,7 +602,16 @@ object NoteView: VBox() {
                         background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
                     })
                     Model.gidMappings[it]!!.notes.forEach {
-                        children.add(NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due))
+                        val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
+                        nb.backgroundProperty().bind(Bindings
+                            .`when`(nb.focusedProperty())
+                            .then( Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))) )
+                            .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
+                        )
+                        nb.setOnMouseClicked {
+                            nb.requestFocus()
+                        }
+                        children.add(nb)
                     }
                 } else {
                     removeList.add(it)

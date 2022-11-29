@@ -1,4 +1,4 @@
-package todo.app.model
+package todo.ui.model
 
 class Group(id: Int) {
     val id = id

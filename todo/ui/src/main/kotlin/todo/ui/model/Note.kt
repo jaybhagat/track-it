@@ -1,4 +1,4 @@
-package todo.app.model
+package todo.ui.model
 
 class Note(id: Int, gid: Int) {
     var id = id
