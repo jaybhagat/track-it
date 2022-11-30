@@ -145,8 +145,6 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
     }
 }
 
-
-
 object sideBar {
     var groups_box = VBox().apply{
         spacing = 10.0
@@ -235,18 +233,41 @@ object sideBar {
 object toolBar {
     val add_task = Button("Add task")
     val rightAlign = Pane()
+    val filter_text = Label("Filter By:")
+    val filter_opts = listOf<String>("-", "Low", "Med", "High")
+    val obs_list = FXCollections.observableList(filter_opts)
+    val filter_menu = ChoiceBox(obs_list)
     var bottom_box = HBox()
+    var filter_by = 0
+    var is_filter = false
 
-    init{
+    init {
         HBox.setHgrow(rightAlign, Priority.ALWAYS)
-        bottom_box = HBox(add_task).apply{
+        bottom_box = HBox(add_task, filter_text, filter_menu).apply{
             spacing = 10.0
             padding = Insets(10.0)
         }
         add_task.setOnAction(){
             openModal()
         }
-
+        filter_menu.apply {
+            setOnAction {
+                if (value == "Low") {
+                    filter_by = 3
+                    is_filter = true
+                } else if (value == "Med") {
+                    filter_by = 2
+                    is_filter = true
+                } else if (value == "High") {
+                    filter_by = 1
+                    is_filter = true
+                } else if (value == "-") {
+                    filter_by = 0
+                    is_filter = false
+                }
+                NoteView.display()
+            }
+        }
     }
 
     fun openModal() = runBlocking<Unit>{
@@ -615,6 +636,7 @@ object NoteView: VBox() {
     fun display() {
         Platform.runLater {
             val removeList = mutableListOf<String>()
+
             children.clear()
             display_groups.forEach {
                 val name = it
@@ -629,18 +651,33 @@ object NoteView: VBox() {
 
                     })
                     Model.gidMappings[it]!!.notes.forEach {
-                        val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
-                        nb.backgroundProperty().bind(Bindings
-                            .`when`(nb.focusedProperty())
-                            .then( Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))) )
-                            .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
-                        )
-                        nb.setOnMouseClicked {
-                            nb.requestFocus()
+                        if (toolBar.is_filter) {
+                            if (it.priority == toolBar.filter_by) {
+                                val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
+                                nb.backgroundProperty().bind(Bindings
+                                        .`when`(nb.focusedProperty())
+                                        .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
+                                        .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
+                                )
+                                nb.setOnMouseClicked {
+                                    nb.requestFocus()
+                                }
+                                children.add(nb)
+                            }
+                        } else {
+                            val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
+                            nb.backgroundProperty().bind(Bindings
+                                .`when`(nb.focusedProperty())
+                                .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
+                                .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
+                            )
+                            nb.setOnMouseClicked {
+                                nb.requestFocus()
+                            }
+                            children.add(nb)
+                          }
                         }
-                        children.add(nb)
-                    }
-                } else {
+                    } else {
                     removeList.add(it)
                 }
             }
