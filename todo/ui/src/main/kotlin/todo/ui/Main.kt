@@ -11,6 +11,9 @@ import todo.ui.view.GroupBox
 import todo.ui.view.NoteBox
 import todo.ui.view.View
 import todo.ui.view.toolBar
+import java.io.*
+import java.util.*
+
 
 class ToDoApplication: Application() {
     override fun start(stage: Stage) {
@@ -18,7 +21,7 @@ class ToDoApplication: Application() {
         val delete_item = KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN)
         val edit_item = KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN)
         stage.title = "TrackIt"
-        stage.scene = Scene(View(), 600.0, 600.0)
+        stage.scene = Scene(View())
         stage.scene.addEventHandler(KeyEvent.KEY_RELEASED) {
             if (new_item.match(it)) {
                 toolBar.openModal()
@@ -34,7 +37,32 @@ class ToDoApplication: Application() {
                 }
             }
         }
-        stage.apply{minWidth= 500.0; minHeight=450.0}
+        stage.apply {
+            minWidth = 800.0
+            minHeight = 600.0
+            try {
+                val s = Scanner(File("dimensions.txt"))
+                val line: String = s.nextLine()
+                width =  line.toDouble()
+                val line2: String = s.nextLine()
+                height = line2.toDouble()
+
+            } catch (ex: FileNotFoundException) {
+                width = minWidth
+                height = minHeight
+            }
+            setOnHiding { event ->
+                try {
+                    BufferedWriter(FileWriter("dimensions.txt")).use { bf ->
+                        bf.write("${width}")
+                        bf.newLine()
+                        bf.write("${height}")
+                    }
+                } catch (ex: IOException) {
+                    println("Problem saving")
+                }
+            }
+        }
         stage.show()
     }
 }
