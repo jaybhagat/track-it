@@ -1,31 +1,29 @@
 package todo.ui.view
 
-import javafx.beans.InvalidationListener
-import javafx.beans.Observable
-import javafx.scene.control.ScrollPane
-import javafx.scene.layout.BorderPane
-import javafx.scene.layout.VBox
-import todo.ui.model.Model
-import javafx.scene.control.*
-import javafx.geometry.Insets
-import javafx.scene.text.Font
-import javafx.scene.layout.*
-import javafx.geometry.Pos
-import javafx.scene.Scene
-import javafx.stage.Stage
-import javafx.stage.Modality
 import io.ktor.http.*
 import javafx.application.Platform
+import javafx.beans.InvalidationListener
+import javafx.beans.Observable
 import javafx.beans.binding.Bindings
 import javafx.collections.FXCollections
+import javafx.geometry.Insets
+import javafx.geometry.Pos
 import javafx.scene.Node
+import javafx.scene.Scene
+import javafx.scene.control.*
+import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.text.Font
+import javafx.stage.Modality
+import javafx.stage.Stage
 import kotlinx.coroutines.*
-import todo.ui.model.Note
 import todo.ui.*
+import todo.ui.model.Model
+import todo.ui.model.Note
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
+import java.util.*
+
 
 class View: BorderPane(), InvalidationListener {
     val side_bar = sideBar
@@ -35,9 +33,10 @@ class View: BorderPane(), InvalidationListener {
         invalidated(null)
         left = side_bar.left
         bottom = tool_bar.bottom_box
-        minWidth = 400.0
+        minWidth = 700.0
         center = ScrollPane(NoteView).apply {
             isFitToWidth = true
+
         }
     }
 
@@ -349,24 +348,47 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
         text = tex
     }
-    val priority_label = Label("priority: " + when(priority) {1 -> "High" 2 -> "Medium" else -> "Low"})
-    val due_label = Label("due: " + due)
-    val delete_button = Button("X")
-    val edit = Button("Edit")
-
-    val reorder_down = Button("down").apply {
-        Color.TRANSPARENT
+    val priority_label = Label("Priority: " + when(priority) {1 -> "High" 2 -> "Medium" else -> "Low"}).apply {
+        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+        padding = Insets(5.0)
     }
-    val reorder_up = Button("up")
+    val due_label = Label("Due: " + due).apply {
+        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+        padding = Insets(5.0)
+    }
+    val delete_button = Button("X").apply {
+        background = Background(BackgroundFill(Color.RED, CornerRadii(0.0), Insets(0.0)))
+        setBorder(Border(BorderStroke(Color.DARKRED, BorderStrokeStyle.SOLID, null, null)))
+    }
+    val edit = Button("Edit").apply {
+        padding = Insets(5.0)
+        prefWidth = 60.0
+    }
+
+    val reorder_down = Button("Down").apply {
+        background = Background(BackgroundFill(Color.LIGHTPINK, CornerRadii(0.0), Insets(0.0)))
+        padding = Insets(5.0,0.0,5.0,0.0)
+        prefWidth = 60.0
+    }
+    val reorder_up = Button("Up").apply {
+        background = Background(BackgroundFill(Color.LIGHTGREEN, CornerRadii(0.0), Insets(0.0)))
+        padding = Insets(5.0,0.0,5.0,0.0)
+        prefWidth = 60.0
+    }
+    val tmpPane = Pane()
     init {
-        children.add(HBox(textField, edit, delete_button).apply {
+        children.add(HBox(textField, delete_button).apply {
             spacing = 10.0
         })
-        children.add(HBox(priority_label, due_label, reorder_up, reorder_down).apply {
+        HBox.setHgrow(textField, Priority.ALWAYS)
+        children.add(HBox(priority_label, due_label, reorder_up, reorder_down, tmpPane, edit).apply {
             spacing = 10.0
         })
+        HBox.setHgrow(tmpPane, Priority.ALWAYS)
         spacing = 10.0
         padding = Insets(10.0)
+        isFillWidth = true
+        setBorder(Border(BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, null, null)))
 
         delete_button.setOnAction() {
             deleteNote()
@@ -568,6 +590,8 @@ object NoteView: VBox() {
 
     init {
         isFillWidth = true
+        spacing = 10.0
+        padding = Insets(10.0)
     }
 
     var display_groups = mutableSetOf<String>()
@@ -599,7 +623,10 @@ object NoteView: VBox() {
                         font = Font.font(15.0)
                         alignment = Pos.TOP_CENTER
                         maxWidth = Double.MAX_VALUE
-                        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+                        background = Background(BackgroundFill(Color.BLACK, CornerRadii(0.0), Insets(0.0)))
+                        padding = Insets(5.0)
+                        textFill = Color.WHITE
+
                     })
                     Model.gidMappings[it]!!.notes.forEach {
                         val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
