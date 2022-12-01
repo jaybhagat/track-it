@@ -322,12 +322,20 @@ object toolBar {
         }
 
         undo.setOnAction(){
-            Model.popUndo()
+            undo()
         }
 
         redo.setOnAction(){
-            Model.popRedo()
+            redo()
         }
+    }
+
+    fun undo() {
+        Model.popUndo()
+    }
+
+    fun redo() {
+        Model.popRedo()
     }
 
     fun openModal() = runBlocking<Unit>{
@@ -447,6 +455,8 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
     val delete_button = Button("X").apply {
         background = Background(BackgroundFill(Color.RED, CornerRadii(0.0), Insets(0.0)))
         border = Border(BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths(1.0)))
+        padding = Insets(5.0,0.0,5.0,0.0)
+        prefWidth = 30.0
     }
     val edit = Button("Edit").apply {
         padding = Insets(5.0)

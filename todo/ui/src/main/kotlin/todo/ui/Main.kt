@@ -19,6 +19,10 @@ class ToDoApplication: Application() {
         val copy_item = KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN)
         val cut_item = KeyCodeCombination(KeyCode.X, KeyCombination.SHORTCUT_DOWN)
         val paste_item = KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN)
+        val move_up_item = KeyCodeCombination(KeyCode.UP, KeyCombination.SHORTCUT_DOWN)
+        val move_down_item = KeyCodeCombination(KeyCode.DOWN, KeyCombination.SHORTCUT_DOWN)
+        val undo = KeyCodeCombination(KeyCode.Z, KeyCombination.SHORTCUT_DOWN)
+        val redo = KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN)
         stage.title = "TrackIt"
         stage.scene = Scene(View())
         stage.scene.addEventHandler(KeyEvent.KEY_RELEASED) {
@@ -46,6 +50,18 @@ class ToDoApplication: Application() {
                 if ( stage.scene.focusOwnerProperty().get() is GroupOfNotes) {
                     (stage.scene.focusOwnerProperty().get() as GroupOfNotes).pasteNote()
                 }
+            } else if (move_up_item.match(it)) {
+                if ( stage.scene.focusOwnerProperty().get() is NoteBox) {
+                    (stage.scene.focusOwnerProperty().get() as NoteBox).moveUp()
+                }
+            } else if (move_down_item.match(it)) {
+                if ( stage.scene.focusOwnerProperty().get() is NoteBox) {
+                    (stage.scene.focusOwnerProperty().get() as NoteBox).moveDown()
+                }
+            } else if (undo.match(it)) {
+                toolBar.undo()
+            } else if (redo.match(it)) {
+                toolBar.redo()
             }
         }
         stage.apply {
