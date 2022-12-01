@@ -70,7 +70,7 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                             println("There was an error editing that item: " + response.error)
                         } else {
                             name = text
-                            Model.editGroup(old_name, name)
+                            Model.editGroup(old_name, name, gid)
                             if (NoteView.display_groups.contains(old_name)) {
                                 NoteView.display_groups.remove(old_name)
                                 NoteView.display_groups.add(name)
@@ -92,6 +92,7 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
             checkBox.isSelected = false
 
             if (name != "Ungrouped") {
+                Model.pushUndo("Delete Group", null, Model.gidMappings[name])
                 val deleteNotes = mutableListOf<Note>()
                 Model.gidMappings[name]!!.notes.forEach {
                     deleteNotes.add(it)
@@ -100,9 +101,11 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                     val response = (async { HttpRequest.deleteTask(it.id) }).await()
                     if (!response.status.isSuccess()) {
                         println("There was an error in deleting the note.")
-                    } else {
-                        Model.deleteNote(name, it.id)
                     }
+                    //else {
+                    //    Model.deleteNote(name, it.id)
+                    //    Model.undo_stack.pop()
+                    //}
                 }
                 val response = (async { HttpRequest.deleteGroup(gid) }).await()
 
@@ -228,6 +231,12 @@ object sideBar {
         }
     }
 
+    fun deleteLastGroup(){
+        Platform.runLater {
+            groups_box.children.removeAt(groups_box.children.size - 1)
+        }
+    }
+
 }
 
 object toolBar {
@@ -235,6 +244,8 @@ object toolBar {
     val rightAlign = Pane()
     val filter_text = Label("Filter By:")
     val filter_opts = listOf<String>("-", "Low", "Med", "High")
+    val undo = Button("Undo")
+    val redo = Button("Redo")
     val filter_list = FXCollections.observableList(filter_opts)
     val filter_menu = ChoiceBox(filter_list)
     val sort_text = Label("Sort By:")
@@ -251,7 +262,8 @@ object toolBar {
         val tmpPane = Pane()
         HBox.setHgrow(tmpPane, Priority.ALWAYS)
         HBox.setHgrow(rightAlign, Priority.ALWAYS)
-        bottom_box = HBox(add_task, tmpPane, filter_text, filter_menu, sort_text, sort_menu).apply{
+
+        bottom_box = HBox(add_task, tmpPane, filter_text, filter_menu, sort_text, sort_menu, undo, redo).apply{
             spacing = 10.0
             padding = Insets(10.0, 23.0, 10.0, 10.0)
             alignment = Pos.CENTER_LEFT
@@ -300,6 +312,14 @@ object toolBar {
                 }
                 NoteView.display()
             }
+        }
+
+        undo.setOnAction(){
+            Model.popUndo()
+        }
+
+        redo.setOnAction(){
+            Model.popRedo()
         }
     }
 
@@ -583,8 +603,13 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         edit_note.setOnAction(){
             GlobalScope.launch(Dispatchers.IO) {
                 var gid = -1
-                var group_text = text_group.value
-                if (Model.gidMappings.containsKey(group_text)) {
+                var group_text = gname
+                try {
+                    group_text = text_group.value
+                }catch (e:Exception) {
+                    println("no group selected so using previous")
+                }
+                    if (Model.gidMappings.containsKey(group_text)) {
                     val id = Model.gidMappings[group_text]!!.id
                     gid = id
                 }
@@ -597,6 +622,15 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
                 if(note.gid != gid){
                     note_idx = Model.gidMappings[group_text]!!.notes.size
+                }else{
+                    var undo_note = Note(note.id, note.gid)
+                    undo_note.text = note.text
+                    undo_note.priority = note.priority
+                    undo_note.gid = note.gid
+                    undo_note.last_edit = note.last_edit
+                    undo_note.due = note.due
+                    undo_note.idx = note.idx
+                    Model.pushUndo("Edit Note", undo_note, null)
                 }
 
                 val response =
@@ -671,6 +705,11 @@ object NoteView: VBox() {
             display_groups.remove(gname)
         }
         display()
+    }
+
+
+    fun add(new_gname: String){
+        display_groups.add(new_gname)
     }
 
     fun add_child(name : String, note : Note) {
