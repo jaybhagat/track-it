@@ -7,19 +7,18 @@ import javafx.scene.input.KeyCodeCombination
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent
 import javafx.stage.Stage
-import todo.ui.view.GroupBox
-import todo.ui.view.NoteBox
-import todo.ui.view.View
-import todo.ui.view.toolBar
+import todo.ui.view.*
 import java.io.*
 import java.util.*
-
 
 class ToDoApplication: Application() {
     override fun start(stage: Stage) {
         val new_item = KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN)
         val delete_item = KeyCodeCombination(KeyCode.D, KeyCombination.SHORTCUT_DOWN)
         val edit_item = KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN)
+        val copy_item = KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN)
+        val cut_item = KeyCodeCombination(KeyCode.X, KeyCombination.SHORTCUT_DOWN)
+        val paste_item = KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN)
         stage.title = "TrackIt"
         stage.scene = Scene(View())
         stage.scene.addEventHandler(KeyEvent.KEY_RELEASED) {
@@ -34,6 +33,18 @@ class ToDoApplication: Application() {
             } else if (edit_item.match(it)) {
                 if ( stage.scene.focusOwnerProperty().get() is NoteBox) {
                     (stage.scene.focusOwnerProperty().get() as NoteBox).openModal()
+                }
+            } else if (copy_item.match(it)) {
+                if ( stage.scene.focusOwnerProperty().get() is NoteBox) {
+                    (stage.scene.focusOwnerProperty().get() as NoteBox).copyCutNote("copy")
+                }
+            } else if (cut_item.match(it)) {
+                if ( stage.scene.focusOwnerProperty().get() is NoteBox) {
+                    (stage.scene.focusOwnerProperty().get() as NoteBox).copyCutNote("cut")
+                }
+            } else if (paste_item.match(it)) {
+                if ( stage.scene.focusOwnerProperty().get() is GroupOfNotes) {
+                    (stage.scene.focusOwnerProperty().get() as GroupOfNotes).pasteNote()
                 }
             }
         }

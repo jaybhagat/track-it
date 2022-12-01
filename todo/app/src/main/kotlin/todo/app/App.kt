@@ -12,7 +12,6 @@ import kotlinx.serialization.json.*
 import org.springframework.web.bind.annotation.*
 import java.util.Calendar
 import todo.dtos.*
-import java.sql.PreparedStatement
 
 var conn: Connection? = null
 

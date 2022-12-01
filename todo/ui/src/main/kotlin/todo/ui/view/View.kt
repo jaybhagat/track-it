@@ -9,6 +9,9 @@ import javafx.collections.FXCollections
 import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
+import javafx.scene.input.Clipboard
+import javafx.scene.input.ClipboardContent
+import javafx.scene.input.MouseButton
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.layout.*
@@ -17,9 +20,13 @@ import javafx.scene.text.Font
 import javafx.stage.Modality
 import javafx.stage.Stage
 import kotlinx.coroutines.*
-import todo.ui.*
-import todo.ui.model.Model
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import todo.ui.model.Note
+import todo.ui.*
+import todo.dtos.ClipboardNote
+import todo.ui.model.Model
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -28,6 +35,7 @@ import java.util.*
 class View: BorderPane(), InvalidationListener {
     val side_bar = sideBar
     val tool_bar = toolBar
+
     init {
         Model.addListener(this)
         invalidated(null)
@@ -36,7 +44,6 @@ class View: BorderPane(), InvalidationListener {
         minWidth = 700.0
         center = ScrollPane(NoteView).apply {
             isFitToWidth = true
-
         }
     }
 
@@ -72,8 +79,8 @@ class GroupBox(val gid: Int, var name: String): HBox(), InvalidationListener {
                             name = text
                             Model.editGroup(old_name, name)
                             if (NoteView.display_groups.contains(old_name)) {
-                                NoteView.display_groups.remove(old_name)
-                                NoteView.display_groups.add(name)
+                                NoteView.remove(old_name)
+                                NoteView.show(name)
                             }
                         }
                     }
@@ -419,7 +426,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
     }
     val delete_button = Button("X").apply {
         background = Background(BackgroundFill(Color.RED, CornerRadii(0.0), Insets(0.0)))
-        setBorder(Border(BorderStroke(Color.DARKRED, BorderStrokeStyle.SOLID, null, null)))
+        border = Border(BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths(1.0)))
     }
     val edit = Button("Edit").apply {
         padding = Insets(5.0)
@@ -436,6 +443,10 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         padding = Insets(5.0,0.0,5.0,0.0)
         prefWidth = 60.0
     }
+
+    val copy = MenuItem("Copy")
+    val cut = MenuItem("Cut")
+
     val tmpPane = Pane()
     init {
         children.add(HBox(textField, delete_button).apply {
@@ -449,7 +460,7 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         spacing = 10.0
         padding = Insets(10.0)
         isFillWidth = true
-        setBorder(Border(BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, null, null)))
+        border = Border(BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths(1.0)))
 
         delete_button.setOnAction() {
             deleteNote()
@@ -457,6 +468,14 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
 
         edit.setOnAction(){
             openModal()
+        }
+
+        copy.setOnAction() {
+            copyCutNote("copy")
+        }
+
+        cut.setOnAction() {
+            copyCutNote("cut")
         }
 
         reorder_up.setOnAction(){
@@ -468,6 +487,14 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
         }
     }
 
+    fun copyCutNote(type: String) {
+        val clipboard = Clipboard.getSystemClipboard()
+        val content = ClipboardContent()
+        var note = ClipboardNote(type, note_id, gid, gname, tex, due, priority)
+
+        content.putString(Json.encodeToString(note))
+        clipboard.setContent(content)
+    }
 
     fun getNoteIdx(gname: String, note_id: Int): Int{
         var note_idx = 0
@@ -646,8 +673,115 @@ class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String
     }
 }
 
+class GroupOfNotes(gname: String): VBox() {
+    var gname = gname
+    val paste = MenuItem("Paste")
+
+    init {
+        isFillWidth = true
+
+        run breaking@{
+            if (Model.gidMappings[gname]!!.notes.size == 0) {
+                children.add(Label("This group is currently empty").apply {
+                    font = Font.font(15.0)
+                    alignment = Pos.TOP_CENTER
+                    maxWidth = Double.MAX_VALUE
+                    padding = Insets(10.0)
+                    background = Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0)))
+                })
+            } else {
+                Model.gidMappings[gname]!!.notes.forEach {
+                    if (toolBar.is_filtered) {
+                        if (it.priority == toolBar.filter_by) {
+                            NoteView.add_child(gname, it)
+                        }
+                    } else if (toolBar.is_sorted) {
+                        if (toolBar.sort_by == "Low-High") {
+                            NoteView.display_sorted(gname, toolBar.sort_by)
+                        } else if (toolBar.sort_by == "High-Low") {
+                            NoteView.display_sorted(gname, toolBar.sort_by)
+                        }
+                        return@breaking
+                    } else {
+                        NoteView.add_child(gname, it)
+                    }
+                }
+            }
+        }
+
+        paste.setOnAction() {
+            pasteNote()
+        }
+    }
+
+    fun pasteNote() = runBlocking<Unit> {
+        val clipboard = Clipboard.getSystemClipboard()
+        if (clipboard.hasString()) {
+            try {
+                val old_note = Json.decodeFromString<ClipboardNote>(clipboard.string)
+
+                var new_gid = -1
+                if (Model.gidMappings.containsKey(gname)) {
+                    val id = Model.gidMappings[gname]!!.id
+                    new_gid = id
+                }
+
+                var index = 0
+                if (Model.gidMappings.containsKey(gname)) {
+                    index = Model.gidMappings[gname]!!.notes.size
+                }
+
+                GlobalScope.launch(Dispatchers.IO) {
+                    if (old_note.type == "cut") {
+                        val response = (async { HttpRequest.deleteTask(old_note.id) }).await()
+
+                        if (!response.status.isSuccess()) {
+                            println("There was an error in deleting the old note.")
+                        } else {
+                            Model.deleteNote(old_note.gname, old_note.id)
+                        }
+                    }
+
+                    val response =
+                        (async {
+                            HttpRequest.addTask(
+                                old_note.text,
+                                old_note.priority,
+                                new_gid,
+                                old_note.due,
+                                index
+                            )
+                        }).await()
+
+                    if (response.status != 1) {
+                        println("There was an error pasting that item: " + response.error)
+                    } else {
+                        println("Item pasted!\n")
+                        var note_id = response.message.toIntOrNull() ?: -1
+                        val c = Calendar.getInstance()
+                        val year = c.get(Calendar.YEAR).toString()
+                        val month = c.get(Calendar.MONTH).toString()
+                        val day = c.get(Calendar.DAY_OF_MONTH).toString()
+                        val last_edit = month + "/" + day + "/" + year
+                        Model.addNote(
+                            gname,
+                            new_gid,
+                            note_id,
+                            old_note.text,
+                            old_note.priority,
+                            last_edit,
+                            old_note.due,
+                            index
+                        )
+                    }
+                }
+            } catch (e: IllegalArgumentException) { }
+        }
+    }
+}
 
 object NoteView: VBox() {
+    var display_groups = mutableSetOf<String>()
 
     init {
         isFillWidth = true
@@ -655,7 +789,6 @@ object NoteView: VBox() {
         padding = Insets(10.0)
     }
 
-    var display_groups = mutableSetOf<String>()
     fun show(gname: String) {
         Platform.runLater {
             display_groups.add(gname)
@@ -680,10 +813,21 @@ object NoteView: VBox() {
             .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
             .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
         )
+
+        val menu = ContextMenu()
+        menu.items.addAll(nb.copy, nb.cut)
         nb.setOnMouseClicked {
-            nb.requestFocus()
+            if (it.button == MouseButton.SECONDARY) {
+                menu.show(nb, it.screenX, it.screenY)
+            } else {
+                menu.hide()
+                nb.requestFocus()
+            }
+            it.consume()
         }
-        children.add(nb)
+        children.add(nb.apply {
+            alignment = Pos.TOP_CENTER
+        })
     }
 
     fun display_sorted(name : String, sort_opt : String) {
@@ -742,26 +886,22 @@ object NoteView: VBox() {
                         background = Background(BackgroundFill(Color.BLACK, CornerRadii(0.0), Insets(0.0)))
                         padding = Insets(5.0)
                         textFill = Color.WHITE
-
                     })
-                    run breaking@ {
-                        Model.gidMappings[it]!!.notes.forEach {
-                            if (toolBar.is_filtered) {
-                                if (it.priority == toolBar.filter_by) {
-                                    add_child(name, it)
-                                }
-                            } else if (toolBar.is_sorted) {
-                                if (toolBar.sort_by == "Low-High") {
-                                    display_sorted(name, toolBar.sort_by)
-                                } else if (toolBar.sort_by == "High-Low") {
-                                    display_sorted(name, toolBar.sort_by)
-                                }
-                                return@breaking
-                            } else {
-                                add_child(name, it)
-                            }
+
+                    val group = GroupOfNotes(it)
+                    group.padding = Insets(10.0)
+                    val menu = ContextMenu()
+                    menu.items.add(group.paste)
+                    group.setOnMouseClicked {
+                        if (it.button == MouseButton.SECONDARY) {
+                            menu.show(group, it.screenX, it.screenY)
+                        } else {
+                            menu.hide()
+                            group.requestFocus()
                         }
+                        it.consume()
                     }
+                    children.add(group)
                 } else {
                     removeList.add(it)
                 }
