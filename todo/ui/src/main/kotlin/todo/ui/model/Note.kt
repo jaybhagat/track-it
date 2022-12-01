@@ -1,5 +1,7 @@
 package todo.ui.model
 
+import kotlinx.serialization.Serializable
+
 class Note(id: Int, gid: Int) {
     var id = id
     var text = ""

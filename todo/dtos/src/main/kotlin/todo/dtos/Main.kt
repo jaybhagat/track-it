@@ -44,6 +44,24 @@ data class BaseResponse(
     var error: String = ""
 )
 
+@Serializable
+data class ClipboardNote(
+    @SerialName("type")
+    var type: String = "",
+    @SerialName("id")
+    var id: Int = -1,
+    @SerialName("gid")
+    var gid: Int = -1,
+    @SerialName("gname")
+    var gname: String = "",
+    @SerialName("text")
+    var text: String = "",
+    @SerialName("due")
+    var due: String = "",
+    @SerialName("priority")
+    var priority: Int = 1,
+)
+
 fun main() {
     println("dtos")
 }
