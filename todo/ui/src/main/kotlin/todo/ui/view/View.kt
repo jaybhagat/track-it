@@ -161,7 +161,7 @@ object sideBar {
     }
     var left = ScrollPane(groups_box).apply {
         vbarPolicy = ScrollPane.ScrollBarPolicy.ALWAYS
-    }.apply{
+        isFitToHeight = true
         padding = Insets(10.0, 10.0, 10.0, 10.0)
     }
 
@@ -248,6 +248,7 @@ object sideBar {
 
 object toolBar {
     val add_task = Button("Add task")
+    val mode_btn = Button("Dark Mode")
     val rightAlign = Pane()
     val filter_text = Label("Filter By:")
     val filter_opts = listOf<String>("-", "Low", "Med", "High")
@@ -264,13 +265,14 @@ object toolBar {
     var sort_by = ""
     var is_filtered = false
     var is_sorted = false
+    var is_dark = true
 
     init {
         val tmpPane = Pane()
         HBox.setHgrow(tmpPane, Priority.ALWAYS)
         HBox.setHgrow(rightAlign, Priority.ALWAYS)
 
-        bottom_box = HBox(add_task, tmpPane, filter_text, filter_menu, sort_text, sort_menu, undo, redo).apply{
+        bottom_box = HBox(add_task, tmpPane, mode_btn, filter_text, filter_menu, sort_text, sort_menu, undo, redo).apply{
             spacing = 10.0
             padding = Insets(10.0, 23.0, 10.0, 10.0)
             alignment = Pos.CENTER_LEFT
@@ -318,6 +320,20 @@ object toolBar {
                     filter_menu.isDisable = false
                 }
                 NoteView.display()
+            }
+        }
+
+        mode_btn.apply {
+            setOnAction {
+                if (text == "Dark Mode") {
+                    is_dark = false
+                    text = "Light Mode"
+                    NoteView.display()
+                } else {
+                    is_dark = true
+                    text = "Dark Mode"
+                    NoteView.display()
+                }
             }
         }
 
@@ -727,17 +743,17 @@ class GroupOfNotes(gname: String): VBox() {
                 Model.gidMappings[gname]!!.notes.forEach {
                     if (toolBar.is_filtered) {
                         if (it.priority == toolBar.filter_by) {
-                            NoteView.add_child(gname, it)
+                            NoteView.addChild(gname, it)
                         }
                     } else if (toolBar.is_sorted) {
                         if (toolBar.sort_by == "Low-High") {
-                            NoteView.display_sorted(gname, toolBar.sort_by)
+                            NoteView.displaySorted(gname, toolBar.sort_by)
                         } else if (toolBar.sort_by == "High-Low") {
-                            NoteView.display_sorted(gname, toolBar.sort_by)
+                            NoteView.displaySorted(gname, toolBar.sort_by)
                         }
                         return@breaking
                     } else {
-                        NoteView.add_child(gname, it)
+                        NoteView.addChild(gname, it)
                     }
                 }
             }
@@ -845,7 +861,27 @@ object NoteView: VBox() {
         display_groups.add(new_gname)
     }
 
-    fun add_child(name : String, note : Note) {
+    fun changeBackground(mode : String) {
+        var color = Color.LIGHTSLATEGREY
+        if (mode == "dark") {
+            color = Color.DARKGRAY
+            NoteView.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.groups_box.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.left.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.create_group.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            toolBar.bottom_box.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            toolBar.bottom_box.border = Border(BorderStroke(Color.WHITE, BorderStrokeStyle.SOLID,CornerRadii.EMPTY, BorderWidths(2.0)))
+        } else {
+            NoteView.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.groups_box.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.left.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            sideBar.create_group.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            toolBar.bottom_box.background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
+            toolBar.bottom_box.border = Border(BorderStroke(Color.WHITE, BorderStrokeStyle.SOLID,CornerRadii.EMPTY, BorderWidths(2.0)))
+        }
+    }
+
+    fun addChild(name : String, note : Note) {
         val nb = NoteBox(name, note.gid, note.id, note.text, note.priority, note.last_edit, note.due)
         nb.backgroundProperty().bind(Bindings
             .`when`(nb.focusedProperty())
@@ -869,49 +905,54 @@ object NoteView: VBox() {
         })
     }
 
-    fun display_sorted(name : String, sort_opt : String) {
+    fun displaySorted(name : String, sort_opt : String) {
         if (sort_opt == "Low-High") {
             var curr_prior = 3
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
             curr_prior = 2
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
             curr_prior = 1
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
         } else if (sort_opt == "High-Low") {
             var curr_prior = 1
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
             curr_prior = 2
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
             curr_prior = 3
             Model.gidMappings[name]!!.notes.forEach {
                 if (it.priority == curr_prior) {
-                    add_child(name, it)
+                    addChild(name, it)
                 }
             }
         }
     }
 
     fun display() {
+        if (toolBar.is_dark) {
+            changeBackground("dark")
+        } else {
+            changeBackground("light")
+        }
         Platform.runLater {
             val removeList = mutableListOf<String>()
             children.clear()
