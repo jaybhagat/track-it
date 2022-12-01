@@ -44,6 +44,7 @@ class View: BorderPane(), InvalidationListener {
         minWidth = 700.0
         center = ScrollPane(NoteView).apply {
             isFitToWidth = true
+            isFitToHeight = true
         }
     }
 
