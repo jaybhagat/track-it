@@ -235,35 +235,68 @@ object toolBar {
     val rightAlign = Pane()
     val filter_text = Label("Filter By:")
     val filter_opts = listOf<String>("-", "Low", "Med", "High")
-    val obs_list = FXCollections.observableList(filter_opts)
-    val filter_menu = ChoiceBox(obs_list)
+    val filter_list = FXCollections.observableList(filter_opts)
+    val filter_menu = ChoiceBox(filter_list)
+    val sort_text = Label("Sort By:")
+    val sort_opts = listOf<String>("-", "Low-High", "High-Low")
+    val sort_list = FXCollections.observableList(sort_opts)
+    val sort_menu = ChoiceBox(sort_list)
     var bottom_box = HBox()
     var filter_by = 0
-    var is_filter = false
+    var sort_by = ""
+    var is_filtered = false
+    var is_sorted = false
 
     init {
+        val tmpPane = Pane()
+        HBox.setHgrow(tmpPane, Priority.ALWAYS)
         HBox.setHgrow(rightAlign, Priority.ALWAYS)
-        bottom_box = HBox(add_task, filter_text, filter_menu).apply{
+        bottom_box = HBox(add_task, tmpPane, filter_text, filter_menu, sort_text, sort_menu).apply{
             spacing = 10.0
-            padding = Insets(10.0)
+            padding = Insets(10.0, 23.0, 10.0, 10.0)
+            alignment = Pos.CENTER_LEFT
         }
         add_task.setOnAction(){
             openModal()
         }
         filter_menu.apply {
+            value = "-"
             setOnAction {
                 if (value == "Low") {
                     filter_by = 3
-                    is_filter = true
+                    is_filtered = true
+                    sort_menu.isDisable = true
                 } else if (value == "Med") {
                     filter_by = 2
-                    is_filter = true
+                    is_filtered = true
+                    sort_menu.isDisable = true
                 } else if (value == "High") {
                     filter_by = 1
-                    is_filter = true
+                    is_filtered = true
+                    sort_menu.isDisable = true
                 } else if (value == "-") {
                     filter_by = 0
-                    is_filter = false
+                    is_filtered = false
+                    sort_menu.isDisable = false
+                }
+                NoteView.display()
+            }
+        }
+        sort_menu.apply {
+            value = "-"
+            setOnAction {
+                if (value == "Low-High") {
+                    sort_by = "Low-High"
+                    is_sorted = true
+                    filter_menu.isDisable = true
+                } else if (value == "High-Low") {
+                    sort_by = "High-Low"
+                    is_sorted = true
+                    filter_menu.isDisable = true
+                } else if (value == "-") {
+                    sort_by = ""
+                    is_sorted = false
+                    filter_menu.isDisable = false
                 }
                 NoteView.display()
             }
@@ -366,11 +399,18 @@ object toolBar {
 
 class NoteBox(var gname: String, var gid: Int, var note_id: Int, var tex: String, var priority: Int, var last_edit: String, var due: String): VBox() {
     val textField = TextField().apply {
-        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+        background = Background(BackgroundFill(Color.PALEGOLDENROD, CornerRadii(0.0), Insets(0.0)))
         text = tex
+        isEditable = false
     }
-    val priority_label = Label("Priority: " + when(priority) {1 -> "High" 2 -> "Medium" else -> "Low"}).apply {
-        background = Background(BackgroundFill(Color.LIGHTGREY, CornerRadii(0.0), Insets(0.0)))
+    val priority_label = Label("Priority: " + when(priority) {1 -> "High" 2 -> "Med" else -> "Low"}).apply {
+        var color = Color.LIGHTBLUE
+        if (priority == 1) {
+            color = Color.LIGHTCORAL
+        } else if (priority == 2) {
+            color = Color.LIGHTSALMON
+        }
+        background = Background(BackgroundFill(color, CornerRadii(0.0), Insets(0.0)))
         padding = Insets(5.0)
     }
     val due_label = Label("Due: " + due).apply {
@@ -633,10 +673,64 @@ object NoteView: VBox() {
         display()
     }
 
+    fun add_child(name : String, note : Note) {
+        val nb = NoteBox(name, note.gid, note.id, note.text, note.priority, note.last_edit, note.due)
+        nb.backgroundProperty().bind(Bindings
+            .`when`(nb.focusedProperty())
+            .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
+            .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
+        )
+        nb.setOnMouseClicked {
+            nb.requestFocus()
+        }
+        children.add(nb)
+    }
+
+    fun display_sorted(name : String, sort_opt : String) {
+        if (sort_opt == "Low-High") {
+            var curr_prior = 3
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+            curr_prior = 2
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+            curr_prior = 1
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+        } else if (sort_opt == "High-Low") {
+            var curr_prior = 1
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+            curr_prior = 2
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+            curr_prior = 3
+            Model.gidMappings[name]!!.notes.forEach {
+                if (it.priority == curr_prior) {
+                    add_child(name, it)
+                }
+            }
+        }
+    }
+
     fun display() {
         Platform.runLater {
             val removeList = mutableListOf<String>()
-
             children.clear()
             display_groups.forEach {
                 val name = it
@@ -650,34 +744,25 @@ object NoteView: VBox() {
                         textFill = Color.WHITE
 
                     })
-                    Model.gidMappings[it]!!.notes.forEach {
-                        if (toolBar.is_filter) {
-                            if (it.priority == toolBar.filter_by) {
-                                val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
-                                nb.backgroundProperty().bind(Bindings
-                                        .`when`(nb.focusedProperty())
-                                        .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
-                                        .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
-                                )
-                                nb.setOnMouseClicked {
-                                    nb.requestFocus()
+                    run breaking@ {
+                        Model.gidMappings[it]!!.notes.forEach {
+                            if (toolBar.is_filtered) {
+                                if (it.priority == toolBar.filter_by) {
+                                    add_child(name, it)
                                 }
-                                children.add(nb)
+                            } else if (toolBar.is_sorted) {
+                                if (toolBar.sort_by == "Low-High") {
+                                    display_sorted(name, toolBar.sort_by)
+                                } else if (toolBar.sort_by == "High-Low") {
+                                    display_sorted(name, toolBar.sort_by)
+                                }
+                                return@breaking
+                            } else {
+                                add_child(name, it)
                             }
-                        } else {
-                            val nb = NoteBox(name, it.gid, it.id, it.text, it.priority, it.last_edit, it.due)
-                            nb.backgroundProperty().bind(Bindings
-                                .`when`(nb.focusedProperty())
-                                .then(Background(BackgroundFill(Color.LIGHTSLATEGREY, CornerRadii(0.0), Insets(0.0))))
-                                .otherwise(Background(BackgroundFill(Color.TRANSPARENT, CornerRadii(0.0), Insets(0.0))))
-                            )
-                            nb.setOnMouseClicked {
-                                nb.requestFocus()
-                            }
-                            children.add(nb)
-                          }
                         }
-                    } else {
+                    }
+                } else {
                     removeList.add(it)
                 }
             }
