@@ -44,18 +44,17 @@ class TaskController() {
         }
     }
 
-
-    @GetMapping("/test")
-    fun connect_test(): String? {
+    fun connect_test(): Connection? {
         try {
             val url = "jdbc:sqlite:src/main/kotlin/assets/database/test.db"
             conn = DriverManager.getConnection(url)
             println("Test DB connection to SQLite has been established.")
-            return "Test DB connection established"
+            return conn
         } catch (e: SQLException) {
             println(e.message)
-            return e.message
         }
+
+        return conn
     }
 
     @GetMapping("/api")
@@ -216,7 +215,19 @@ class TaskController() {
             return Json.encodeToString(listOf(res))
         }
 
+
         val con = conn
+        if (con != null) {
+            val gid_check = "SELECT COUNT(*) AS total FROM notes WHERE group_id='${getNoteDetails.gid}'"
+            val gid_query = con.createStatement()
+            val result = gid_query.executeQuery(gid_check)
+            if (result.getInt("total") == 0) {
+                res.status = 0
+                res.error = "No matching group id found."
+                return Json.encodeToString(listOf(res))
+            }
+        }
+
         try {
             if (con != null) {
                 val sql =
@@ -236,6 +247,7 @@ class TaskController() {
                 return Json.encodeToString(listOf(res))
             }
         } catch (ex: SQLException) {
+            println(ex.message)
             val error = "Error in note creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
             println(error)
             res.status = 0
@@ -251,6 +263,18 @@ class TaskController() {
     @PostMapping("/api/edit/task")
     fun editTask(@RequestBody getNoteDetails: Note): String {
         val res = BaseResponse()
+
+        if(!isValidDate(getNoteDetails.due)){
+            res.status = 0
+            res.error = "Invalid date"
+            return Json.encodeToString(listOf(res))
+        }
+
+        if(getNoteDetails.priority <= 0 || getNoteDetails.priority > 3){
+            res.status = 0
+            res.error = "Invalid priority. Please choose a priority between 1 and 3"
+            return Json.encodeToString(listOf(res))
+        }
 
         val con = conn
         try {
@@ -358,7 +382,7 @@ class TaskController() {
                 return Json.encodeToString(listOf(res))
             }
         } catch (ex: SQLException) {
-            val error = "Error in group creation"/* errorMapping.getOrDefault(ex.message, ex.message).orEmpty() */
+            val error = "Error in group creation"
             println(error)
             res.status = 0
             res.error = error
