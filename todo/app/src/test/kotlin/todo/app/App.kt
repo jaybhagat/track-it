@@ -50,12 +50,6 @@ class ToDoApplicationTests {
 	}
 
 	@Test
-	fun addTaskGroupFailedTest() {
-		val result = ToDoInst.addTask(Note(-1, "Test", 1, 3,"10/21/2022", "10/23/2025", 0))
-		Assertions.assertEquals(0, Json.decodeFromString<List<BaseResponse>>(result)[0].status)
-	}
-
-	@Test
 	fun addTaskPriorityFailedTest() {
 		val result = ToDoInst.addTask(Note(-1, "Test", 6, 3,"10/21/2022", "10/23/2025", 0))
 		Assertions.assertEquals(0, Json.decodeFromString<List<BaseResponse>>(result)[0].status, )

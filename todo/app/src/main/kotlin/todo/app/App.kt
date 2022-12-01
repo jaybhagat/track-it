@@ -217,17 +217,6 @@ class TaskController() {
 
 
         val con = conn
-        if (con != null) {
-            val gid_check = "SELECT COUNT(*) AS total FROM notes WHERE group_id='${getNoteDetails.gid}'"
-            val gid_query = con.createStatement()
-            val result = gid_query.executeQuery(gid_check)
-            if (result.getInt("total") == 0) {
-                res.status = 0
-                res.error = "No matching group id found."
-                return Json.encodeToString(listOf(res))
-            }
-        }
-
         try {
             if (con != null) {
                 val sql =
