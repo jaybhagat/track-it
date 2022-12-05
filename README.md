@@ -6,50 +6,10 @@ Do you ever get frustrated with to-do lists and end up missing assignments? Do y
 
 TrackIT allows users to keep __track__ of the items you need to do. With TrackIT, you can organize your todo's into different groups, priorities, different due dates, and so much more! We have manual sorting for you, and best of all: multiple hotkeys! If you can do it in the app, you can do it with a hotkey.
 
-![Screen_Shot_2022-12-01_at_3.13.38_PM](uploads/801dc61e679922062d45acc58da82430/Screen_Shot_2022-12-01_at_3.13.38_PM.png)
-
 **Team 208**: Jay Bhagat, Devraj Bhati, Tapish Jain, Sarvesh Gambhir
 
-## Usage Instructions
-- Open the TrackIT app, while the server is running.
-- Add new tasks using the "New task" button.
-- Create new groups by putting in the group name you want, and then clicking the "+" button on the sidebar.
-- Select the checkbox for different groups to filter by those groups.
-- After selecting a group, it can be deleted using the "X" button beside a group.
-- Tasks can be deleted using the "X" button beside a task.
-- Tasks can be edited using the Edit button.
-- Tasks can be moved up or down within the group using the Up/Down buttons.
-- The filter by options in the toolbar below can allow you to filter by specific priorities.
-- The sort by options in the toolbar below can allow you to sort by different priorities.
-- The undo and redo buttons do just that, undo an action and redo an action.
-- Tasks can also be copy/cut and pasted by right-clicking on them and selecting the appropriate buttons. Paste by right clicking on a group area.
+Refer to project wiki for more details: https://git.uwaterloo.ca/s3gambhi/cs-346-project/-/wikis/home
 
-| Action | Hotkey* |
-| ------ | ------ |
-| New Task | N |
-| Delete Task | N |
-| Edit Task | E |
-| Copy Task | C |
-| Cut Task | X |
-| Paste Task | V |
-| Move Task Up | UP-ARROW |
-| Move Task Down | DOWN-ARROW |
-| Undo | Z |
-| Redo | R |
-
-* Note, for MacOS users, CMD must be pressed along with the key, and for Windows users CTRL must be pressed.
-
-## Installation Instructions
-
-- To install download the distributions from todo/distributions. Note that these files could not be
-  attached due to their size.
-
-## Releases
-
-- [Version 1.1](Sprint 1 Release) - Sprint 1 Release
-- [Version 1.2](Sprint 2 Release) - Sprint 2 Release
-- [Version 1.3](Sprint 3 Release) - Sprint 3 Release
-- (NEW) [Version 1.4](Sprint 4 Release) - Sprint 4 Release
 
 ## Third-party Acknowledgements
 
