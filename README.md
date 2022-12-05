@@ -1,6 +1,6 @@
-# CS 346: Application Development
+# TrackIT
 
-**TrackIT:** A TODO List application for Desktop (Windows, Linux, or macOS)
+A TODO List application for Desktop (Windows, Linux, or macOS)
 
 Do you ever get frustrated with to-do lists and end up missing assignments? Do you wish your to-do list let you customize priorities, due dates, and sorting? Well then, TrackIT is the app for you!
 
@@ -8,8 +8,44 @@ TrackIT allows users to keep __track__ of the items you need to do. With TrackIT
 
 **Team 208**: Jay Bhagat, Devraj Bhati, Tapish Jain, Sarvesh Gambhir
 
-Refer to project wiki for more details: https://git.uwaterloo.ca/s3gambhi/cs-346-project/-/wikis/home
+![TrackIT in action](/source/images/trackit.png)
 
+## Video Walkthrough
+
+Find a quick video walkthrough here: https://drive.google.com/file/d/1llqTubVAUODy_w1DklG574DKDH168G1Q/view?usp=sharing
+
+## Usage Instructions
+- Open the TrackIT app, while the server is running.
+- Add new tasks using the "New task" button.
+- Create new groups by putting in the group name you want, and then clicking the "+" button on the sidebar.
+- Select the checkbox for different groups to filter by those groups.
+- After selecting a group, it can be deleted using the "X" button beside a group.
+- Tasks can be deleted using the "X" button beside a task.
+- Tasks can be edited using the Edit button.
+- Tasks can be moved up or down within the group using the Up/Down buttons.
+- The filter by options in the toolbar below can allow you to filter by specific priorities.
+- The sort by options in the toolbar below can allow you to sort by different priorities.
+- The undo and redo buttons do just that, undo an action and redo an action.
+- Tasks can also be copy/cut and pasted by right-clicking on them and selecting the appropriate buttons. Paste by right clicking on a group area.
+
+| Action | Hotkey* |
+| ------ | ------ |
+| New Task | N |
+| Delete Task | N |
+| Edit Task | E |
+| Copy Task | C |
+| Cut Task | X |
+| Paste Task | V |
+| Move Task Up | UP-ARROW |
+| Move Task Down | DOWN-ARROW |
+| Undo | Z |
+| Redo | R |
+
+* Note, for MacOS users, CMD must be pressed along with the key, and for Windows users CTRL must be pressed.
+
+## Installation Instructions
+
+- To install, download the .ZIP and the database file distributions at https://drive.google.com/drive/folders/12Tmj-EMv1uPpszVmnbEP2AJAwfjKBmwZ?usp=sharing.
 
 ## Third-party Acknowledgements
 
